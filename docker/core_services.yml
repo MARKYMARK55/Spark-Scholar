@@ -77,7 +77,7 @@ services:
     env_file:
       - ../env/.env
     environment:
-      LITELLM_MASTER_KEY: "${LITELLM_MASTER_KEY:-sk-change-me}"
+      LITELLM_MASTER_KEY: "simple-api-key"
       LITELLM_DATABASE_URL: "postgresql://litellm:litellm_pass@litellm-db:5432/litellm"
     command: ["--config", "/app/config.yaml", "--port", "4000", "--num_workers", "4"]
     extra_hosts:
@@ -115,8 +115,8 @@ services:
       - ../env/.env
     environment:
       OPENAI_API_BASE_URL: "http://litellm:4000/v1"
-      OPENAI_API_KEY: "${LITELLM_API_KEY:-simple-api-key}"
-      WEBUI_SECRET_KEY: "${WEBUI_SECRET_KEY:-simple-api-key}"
+      OPENAI_API_KEY: "simple-api-key"
+      WEBUI_SECRET_KEY: "simple-api-key"
       ENABLE_OLLAMA_API: "false"
       ENABLE_OPENAI_API: "true"
       # Web search via SearXNG
@@ -130,7 +130,7 @@ services:
       # Qdrant vector DB for Open WebUI document uploads (Path A)
       VECTOR_DB: "qdrant"
       QDRANT_URI: "http://qdrant:6333"
-      QDRANT_API_KEY: "${QDRANT_API_KEY:-simple-api-key}"
+      QDRANT_API_KEY: "simple-api-key"
       # BGE-M3 as the embedding model via LiteLLM
       RAG_EMBEDDING_ENGINE: "openai"
       RAG_EMBEDDING_MODEL: "bge-m3-embedder"
@@ -172,7 +172,7 @@ services:
       LANGFLOW_HOST: "0.0.0.0"
       LANGFLOW_PORT: "7860"
       LANGFLOW_WORKERS: "2"
-      OPENAI_API_KEY: "${LITELLM_API_KEY:-simple-api-key}"
+      OPENAI_API_KEY: "simple-api-key"
       OPENAI_API_BASE: "http://litellm:4000/v1"
     command: >
       langflow run

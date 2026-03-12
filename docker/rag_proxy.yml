@@ -56,13 +56,13 @@ services:
     environment:
       # Service URLs use Docker service names (internal llm-net hostnames)
       QDRANT_URL: "http://qdrant:6333"
-      QDRANT_API_KEY: "${QDRANT_API_KEY:-simple-api-key}"
+      QDRANT_API_KEY: "simple-api-key"
       BGE_M3_DENSE_URL: "http://bge-m3-dense-embedder:8025"
       BGE_M3_SPARSE_URL: "http://bge-m3-sparse-embedder:8035"
       BGE_RERANKER_URL: "http://bge-m3-reranker:8020"
-      BGE_M3_API_KEY: "${BGE_M3_API_KEY:-simple-api-key}"
+      BGE_M3_API_KEY: "simple-api-key"
       LITELLM_BASE_URL: "http://litellm:4000"
-      LITELLM_API_KEY: "${LITELLM_API_KEY:-simple-api-key}"
+      LITELLM_API_KEY: "simple-api-key"
       REDIS_URL: "redis://redis:6379"
       SEARXNG_URL: "http://searxng:8080"
       RAG_PROXY_HOST: "0.0.0.0"

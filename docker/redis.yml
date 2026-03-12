@@ -58,7 +58,6 @@ services:
       --maxmemory-policy allkeys-lru
     environment:
       # Uncomment to enable password auth:
-      # REDIS_PASSWORD: "${REDIS_PASSWORD:-}"
       TZ: UTC
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]

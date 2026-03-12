@@ -47,7 +47,7 @@ services:
     volumes:
       - searxng_data:/etc/searxng
     environment:
-      SEARXNG_SECRET: "${LITELLM_MASTER_KEY:-change-me-searxng-secret}"
+      SEARXNG_SECRET: "simple-api-key"
       SEARXNG_BIND_ADDRESS: "0.0.0.0:8080"
       # Disable analytics / telemetry
       SEARXNG_ENABLE_METRICS: "false"

@@ -75,8 +75,8 @@ services:
     environment:
       DATABASE_URL: "postgresql://langfuse:langfuse_pass@langfuse-db:5432/langfuse"
       NEXTAUTH_URL: "http://localhost:3000"
-      NEXTAUTH_SECRET: "${LITELLM_MASTER_KEY:-change-me-langfuse}"
-      SALT: "${LITELLM_MASTER_KEY:-change-me-langfuse-salt}"
+      NEXTAUTH_SECRET: "simple-api-key"
+      SALT: "simple-api-key"
       PORT: "3000"
       LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "false"
       TELEMETRY_ENABLED: "false"
