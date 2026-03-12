@@ -63,13 +63,13 @@ services:
       BGE_M3_API_KEY: "simple-api-key"
       LITELLM_BASE_URL: "http://litellm:4000"
       LITELLM_API_KEY: "simple-api-key"
-      REDIS_URL: "redis://redis:6379"
+      REDIS_URL: "redis://redis:6379"      # Valkey is Redis-protocol compatible
       SEARXNG_URL: "http://searxng:8080"
       RAG_PROXY_HOST: "0.0.0.0"
       RAG_PROXY_PORT: "8002"
       RAG_TOP_K: "${RAG_TOP_K:-10}"
       RAG_RERANK_TOP_N: "${RAG_RERANK_TOP_N:-50}"
-      CACHE_TTL_SECONDS: "${CACHE_TTL_SECONDS:-3600}"
+      CACHE_TTL_SECONDS: "${CACHE_TTL_SECONDS:-86400}"  # 24 hours — single-user setup
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8002/health || exit 1"]
       interval: 30s

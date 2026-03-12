@@ -1,6 +1,8 @@
 # docker/redis.yml
 # =================
-# Redis (Valkey-compatible) cache for the Arxiv RAG pipeline.
+# Valkey cache for the Arxiv RAG pipeline.
+# Valkey is a Redis-compatible open-source fork (Redis 7.x API compatible).
+# Your running instance is valkey/valkey:8-alpine — this file matches that.
 #
 # Used by:
 #   - pipeline/cache.py   — caches full RAG responses (TTL from CACHE_TTL_SECONDS)
@@ -40,27 +42,26 @@ volumes:
 services:
 
   redis:
-    image: redis:7.4-alpine
+    image: valkey/valkey:8-alpine
     container_name: redis
     restart: unless-stopped
     networks:
       - llm-net
     ports:
-      - "6379:6379"               # Expose for local scripts; remove if Redis should be internal-only
+      - "6379:6379"               # Expose for local scripts; remove if internal-only preferred
     volumes:
       - redis_data:/data
     command: >
-      redis-server
+      valkey-server
       --save 60 1
       --save 300 10
       --loglevel warning
       --maxmemory 4gb
       --maxmemory-policy allkeys-lru
     environment:
-      # Uncomment to enable password auth:
       TZ: UTC
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "valkey-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
