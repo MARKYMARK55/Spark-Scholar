@@ -1,8 +1,10 @@
 # spark-scholar
 
-Production arXiv RAG stack for DGX Spark — hybrid dense+sparse retrieval,
-BGE-M3 reranking, LangGraph orchestration, and an OpenAI-compatible proxy
-that plugs directly into Open WebUI.
+Local research knowledge base for DGX Spark — ingest any PDF or arXiv paper
+with BGE-M3 chunking and hybrid dense+sparse embedding, auto-expand your corpus
+via L1→L2→L3 citation graph traversal, and query everything through a
+cross-encoder reranked LangGraph pipeline via an OpenAI-compatible proxy that
+plugs directly into Open WebUI.
 
 **GitHub:** https://github.com/MARKYMARK55/spark-scholar
 
