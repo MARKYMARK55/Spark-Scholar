@@ -1,0 +1,70 @@
+# core_services/litellm_local.yaml
+# =================================
+# LiteLLM config — LOCAL SparkRun models only.
+# Port 4000  →  Open WebUI "Local Models" connection, RAG proxy.
+#
+# Models here: vLLM inference (SparkRun), BGE-M3 embedder, BGE reranker.
+# No cloud API keys required — works fully offline.
+#
+# Start with:  docker compose -f core_services/core_services.yml up -d litellm
+# Logs:        docker compose -f core_services/core_services.yml logs -f litellm
+
+general_settings:
+  master_key: "os.environ/LITELLM_MASTER_KEY"
+  database_url: "os.environ/LITELLM_DATABASE_URL"
+  store_model_in_db: true
+  allow_requests_on_db_unavailable: true
+
+model_list:
+
+  # ── Primary LLM: SparkRun vLLM (port 8000) ───────────────────────────────
+  # SparkRun manages this. Set VLLM_MODEL_NAME to match what you loaded.
+  # github.com/scitrera/oss-spark-run
+  - model_name: local-model
+    litellm_params:
+      model: "openai/local-model"
+      api_base: "os.environ/VLLM_URL"
+      api_key:  "os.environ/VLLM_API_KEY"
+      stream_timeout: 300
+      timeout: 300
+    model_info:
+      description: "Primary LLM served by SparkRun vLLM (Qwen3, Nemotron-H, etc.)"
+
+  - model_name: vllm                        # alias
+    litellm_params:
+      model: "openai/local-model"
+      api_base: "os.environ/VLLM_URL"
+      api_key:  "os.environ/VLLM_API_KEY"
+
+  # ── BGE-M3 Dense Embedder (vLLM, port 8025) ──────────────────────────────
+  - model_name: bge-m3-embedder
+    litellm_params:
+      model: "openai/bge-m3-embedder"
+      api_base: "os.environ/BGE_M3_DENSE_URL"
+      api_key:  "os.environ/BGE_M3_API_KEY"
+    model_info:
+      mode: embedding
+      description: "BGE-M3 dense embedder via vLLM — 1024-dim, port 8025"
+
+  # ── BGE-M3 Cross-Encoder Reranker (vLLM, port 8020) ──────────────────────
+  - model_name: bge-reranker-v2-m3
+    litellm_params:
+      model: "openai/bge-reranker-v2-m3"
+      api_base: "os.environ/BGE_RERANKER_URL"
+      api_key:  "os.environ/BGE_M3_API_KEY"
+    model_info:
+      mode: rerank
+      description: "BGE-M3 cross-encoder reranker via vLLM — port 8020"
+
+router_settings:
+  num_retries: 3
+  retry_after: 5
+  routing_strategy: "simple-shuffle"
+  request_timeout: 300
+  cache_responses: false        # RAG proxy handles caching in Redis
+
+litellm_settings:
+  drop_params: true
+  set_verbose: false
+  json_logs: true
+  log_level: "INFO"

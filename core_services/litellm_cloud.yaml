@@ -1,0 +1,137 @@
+# core_services/litellm_cloud.yaml
+# ==================================
+# LiteLLM config — CLOUD / EXTERNAL models only.
+# Port 4001  →  Open WebUI "Cloud Models" connection.
+#
+# All models require real API keys in env/.env.
+# Models whose env var is empty/missing are silently skipped by LiteLLM.
+# The stack works fully without this file — it is entirely optional.
+#
+# Start with:  docker compose -f core_services/core_services.yml up -d litellm-cloud
+# Logs:        docker compose -f core_services/core_services.yml logs -f litellm-cloud
+
+general_settings:
+  master_key: "os.environ/LITELLM_MASTER_KEY"
+  store_model_in_db: false          # No persistent DB needed for cloud routing
+  allow_requests_on_db_unavailable: true
+
+model_list:
+
+  # ── OpenAI ───────────────────────────────────────────────────────────────
+  # env key: OPENAI_API_KEY   →  https://platform.openai.com/api-keys
+  - model_name: gpt-4o
+    litellm_params:
+      model: gpt-4o
+      api_key: "os.environ/OPENAI_API_KEY"
+  - model_name: gpt-4o-mini
+    litellm_params:
+      model: gpt-4o-mini
+      api_key: "os.environ/OPENAI_API_KEY"
+  - model_name: o3
+    litellm_params:
+      model: o3
+      api_key: "os.environ/OPENAI_API_KEY"
+  - model_name: o4-mini
+    litellm_params:
+      model: o4-mini
+      api_key: "os.environ/OPENAI_API_KEY"
+
+  # ── Anthropic Claude ─────────────────────────────────────────────────────
+  # env key: ANTHROPIC_API_KEY   →  https://console.anthropic.com/settings/keys
+  - model_name: claude-sonnet-4-5
+    litellm_params:
+      model: anthropic/claude-sonnet-4-5
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+  - model_name: claude-opus-4
+    litellm_params:
+      model: anthropic/claude-opus-4
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+  - model_name: claude-haiku-3-5
+    litellm_params:
+      model: anthropic/claude-haiku-3-5
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+
+  # ── Google Gemini ─────────────────────────────────────────────────────────
+  # env key: GEMINI_API_KEY   →  https://aistudio.google.com/app/apikey
+  - model_name: gemini-2.5-pro
+    litellm_params:
+      model: gemini/gemini-2.5-pro
+      api_key: "os.environ/GEMINI_API_KEY"
+  - model_name: gemini-2.5-flash
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: "os.environ/GEMINI_API_KEY"
+  - model_name: gemini-2.0-flash
+    litellm_params:
+      model: gemini/gemini-2.0-flash
+      api_key: "os.environ/GEMINI_API_KEY"
+
+  # ── NVIDIA NIM cloud ─────────────────────────────────────────────────────
+  # env key: NVIDIA_API_KEY   →  https://build.nvidia.com  (free tier available)
+  - model_name: nemotron-70b-cloud
+    litellm_params:
+      model: "openai/nvidia/llama-3.1-nemotron-70b-instruct"
+      api_base: "https://integrate.api.nvidia.com/v1"
+      api_key: "os.environ/NVIDIA_API_KEY"
+  - model_name: nemotron-h-56b-cloud
+    litellm_params:
+      model: "openai/nvidia/nemotron-h-56b-instruct"
+      api_base: "https://integrate.api.nvidia.com/v1"
+      api_key: "os.environ/NVIDIA_API_KEY"
+
+  # ── xAI Grok ─────────────────────────────────────────────────────────────
+  # env key: XAI_API_KEY   →  https://console.x.ai/
+  - model_name: grok-3
+    litellm_params:
+      model: xai/grok-3
+      api_key: "os.environ/XAI_API_KEY"
+  - model_name: grok-3-mini
+    litellm_params:
+      model: xai/grok-3-mini
+      api_key: "os.environ/XAI_API_KEY"
+
+  # ── DeepSeek ─────────────────────────────────────────────────────────────
+  # env key: DEEPSEEK_API_KEY   →  https://platform.deepseek.com/api_keys
+  - model_name: deepseek-v3
+    litellm_params:
+      model: deepseek/deepseek-chat
+      api_key: "os.environ/DEEPSEEK_API_KEY"
+  - model_name: deepseek-r1
+    litellm_params:
+      model: deepseek/deepseek-reasoner
+      api_key: "os.environ/DEEPSEEK_API_KEY"
+
+  # ── Perplexity (web-search augmented) ─────────────────────────────────────
+  # env key: PERPLEXITY_API_KEY   →  https://www.perplexity.ai/settings/api
+  - model_name: sonar-pro
+    litellm_params:
+      model: perplexity/sonar-pro
+      api_key: "os.environ/PERPLEXITY_API_KEY"
+  - model_name: sonar-deep-research
+    litellm_params:
+      model: perplexity/sonar-deep-research
+      api_key: "os.environ/PERPLEXITY_API_KEY"
+
+  # ── OpenRouter (multi-model gateway — access 200+ models with one key) ───
+  # env key: OPENROUTER_API_KEY   →  https://openrouter.ai/settings/keys
+  - model_name: openrouter-claude
+    litellm_params:
+      model: openrouter/anthropic/claude-opus-4
+      api_key: "os.environ/OPENROUTER_API_KEY"
+      api_base: "https://openrouter.ai/api/v1"
+  - model_name: openrouter-gemini
+    litellm_params:
+      model: openrouter/google/gemini-2.5-pro
+      api_key: "os.environ/OPENROUTER_API_KEY"
+      api_base: "https://openrouter.ai/api/v1"
+
+router_settings:
+  num_retries: 2
+  retry_after: 3
+  routing_strategy: "simple-shuffle"
+  request_timeout: 120
+
+litellm_settings:
+  drop_params: true
+  set_verbose: false
+  log_level: "INFO"

@@ -2,32 +2,36 @@
 """
 ingest/02_create_collections.py
 ================================
-Create all 14 Qdrant collections with the correct dense + sparse vector configs.
+Create all Qdrant collections — arXiv subject collections + tech documentation.
 
 Each collection gets:
   - dense_embedding: 1024-dim cosine vectors with HNSW (m=16, ef_construct=100)
   - sparse_text:     SPLADE-style sparse vectors (indices + values)
   - on_disk_payload: True  (payload stored on disk to save GPU VRAM)
 
-Collections created:
-  arXiv (catch-all)
-  arxiv-cs-ml-ai
-  arxiv-condmat
-  arxiv-astro
-  arxiv-hep
-  arxiv-math-applied
-  arxiv-math-phys
-  arxiv-math-pure
-  arxiv-misc
-  arxiv-nucl-nlin-physother
-  arxiv-qbio-qfin-econ
-  arxiv-quantph-grqc
-  arxiv-stat-eess
-  arxiv-cs-systems-theory
+arXiv collections (14) — populated by ingest/03_ingest_dense.py + 04_ingest_sparse.py:
+  arXiv (catch-all)           arxiv-cs-ml-ai           arxiv-condmat
+  arxiv-astro                 arxiv-hep                 arxiv-math-applied
+  arxiv-math-phys             arxiv-math-pure           arxiv-misc
+  arxiv-nucl-nlin-physother   arxiv-qbio-qfin-econ      arxiv-quantph-grqc
+  arxiv-stat-eess             arxiv-cs-systems-theory
+
+Documentation collections (8) — populated by ingest/05_ingest_pdfs.py + 07_ingest_html_docs.py:
+  docs-python        Python stdlib, NumPy, Pandas, FastAPI, LangChain, etc.
+  docs-rust          The Rust Book, std lib, Cargo docs, Tokio, etc.
+  docs-javascript    MDN Web Docs, Node.js, TypeScript, React, etc.
+  docs-docker        Docker Engine, Compose, Kubernetes, container ecosystem
+  docs-anthropic     Claude API, Computer Use (CUA), Anthropic platform docs
+  docs-applescript   AppleScript Language Guide, macOS scripting additions
+  docs-devops        GitHub Actions, Terraform, CI/CD, observability tools
+  docs-web           HTML5, CSS3, Web APIs, browser internals (MDN non-JS)
 
 Usage
 -----
-    python ingest/02_create_collections.py
+    python ingest/02_create_collections.py                    # create all
+    python ingest/02_create_collections.py --arxiv-only       # arXiv only
+    python ingest/02_create_collections.py --docs-only        # docs only
+    python ingest/02_create_collections.py --collection docs-rust  # single
     python ingest/02_create_collections.py --recreate  # Drop and recreate
     python ingest/02_create_collections.py --host qdrant --port 6333
 """
@@ -59,22 +63,42 @@ logger = logging.getLogger(__name__)
 # Collection names
 # ---------------------------------------------------------------------------
 
-COLLECTIONS = [
-    "arXiv",
-    "arxiv-cs-ml-ai",
-    "arxiv-condmat",
-    "arxiv-astro",
-    "arxiv-hep",
-    "arxiv-math-applied",
-    "arxiv-math-phys",
-    "arxiv-math-pure",
-    "arxiv-misc",
-    "arxiv-nucl-nlin-physother",
-    "arxiv-qbio-qfin-econ",
-    "arxiv-quantph-grqc",
-    "arxiv-stat-eess",
-    "arxiv-cs-systems-theory",
+# ---------------------------------------------------------------------------
+# arXiv subject collections — populated by ingest/03 + ingest/04
+# ---------------------------------------------------------------------------
+ARXIV_COLLECTIONS = [
+    "arXiv",                     # catch-all (every paper also indexed here)
+    "arxiv-cs-ml-ai",            # cs.LG, cs.AI, cs.CL, cs.CV, cs.RO, stat.ML
+    "arxiv-condmat",             # cond-mat.*
+    "arxiv-astro",               # astro-ph.*
+    "arxiv-hep",                 # hep-th, hep-ph, hep-ex, hep-lat
+    "arxiv-math-applied",        # math.NA, math.OC, math.PR, math.ST
+    "arxiv-math-phys",           # math-ph, math.MP
+    "arxiv-math-pure",           # math.AG, math.AT, math.CA, math.CO, etc.
+    "arxiv-misc",                # cs.HC, cs.SE, cs.NI, cs.DB, cs.PF, eess.SP
+    "arxiv-nucl-nlin-physother", # nucl-th, nucl-ex, nlin.*, physics.*
+    "arxiv-qbio-qfin-econ",      # q-bio.*, q-fin.*, econ.*
+    "arxiv-quantph-grqc",        # quant-ph, gr-qc
+    "arxiv-stat-eess",           # stat.*, eess.*
+    "arxiv-cs-systems-theory",   # cs.DC, cs.DS, cs.CC, cs.IT, cs.GT
 ]
+
+# ---------------------------------------------------------------------------
+# Documentation collections — populated by ingest/05 (PDFs) + ingest/07 (HTML)
+# ---------------------------------------------------------------------------
+DOCS_COLLECTIONS = [
+    "docs-python",        # Python stdlib, NumPy, Pandas, FastAPI, LangChain, Pydantic, etc.
+    "docs-rust",          # The Rust Book, std lib, Cargo, Tokio, Axum, Serde, etc.
+    "docs-javascript",    # MDN JS, Node.js, TypeScript, React, Next.js, Deno, Bun, etc.
+    "docs-docker",        # Docker Engine, Compose, Buildx, Kubernetes, Helm, etc.
+    "docs-anthropic",     # Claude API, Computer Use (CUA), Model Context Protocol (MCP)
+    "docs-applescript",   # AppleScript Language Guide, OSAX, macOS automation
+    "docs-devops",        # GitHub Actions, Terraform, Ansible, CI/CD, Grafana, Prometheus
+    "docs-web",           # HTML5, CSS3, Web APIs, HTTP, browser standards (MDN non-JS)
+]
+
+# All collections together
+COLLECTIONS = ARXIV_COLLECTIONS + DOCS_COLLECTIONS
 
 # Vector configuration constants
 DENSE_DIM = 1024
@@ -155,19 +179,39 @@ def create_all_collections(
     qdrant_url: str,
     api_key: str | None = None,
     recreate: bool = False,
+    collection_set: str = "all",
+    single_collection: str | None = None,
 ) -> dict[str, bool]:
     """
-    Create all 14 arXiv collections.
+    Create Qdrant collections for arXiv and/or documentation.
+
+    Parameters
+    ----------
+    collection_set : str
+        "all"    — all arXiv + docs collections (default)
+        "arxiv"  — arXiv subject collections only
+        "docs"   — documentation collections only
+    single_collection : str | None
+        If set, create only this one collection.
 
     Returns
     -------
     dict[str, bool]
         Maps collection name → True (created) / False (already existed)
     """
+    if single_collection:
+        target = [single_collection]
+    elif collection_set == "arxiv":
+        target = ARXIV_COLLECTIONS
+    elif collection_set == "docs":
+        target = DOCS_COLLECTIONS
+    else:
+        target = COLLECTIONS
+
     client = QdrantClient(url=qdrant_url, api_key=api_key, timeout=30)
 
     results: dict[str, bool] = {}
-    for name in COLLECTIONS:
+    for name in target:
         try:
             created = create_collection(client, name, recreate=recreate)
             results[name] = created
@@ -207,7 +251,7 @@ def verify_collections(qdrant_url: str, api_key: str | None = None) -> None:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Create Qdrant collections for arXiv RAG"
+        description="Create Qdrant collections for arXiv RAG + documentation"
     )
     parser.add_argument(
         "--host",
@@ -219,6 +263,22 @@ def main():
         type=int,
         default=6333,
         help="Qdrant port (default: 6333)",
+    )
+    parser.add_argument(
+        "--arxiv-only",
+        action="store_true",
+        help="Create only the 14 arXiv subject collections",
+    )
+    parser.add_argument(
+        "--docs-only",
+        action="store_true",
+        help="Create only the 8 documentation collections",
+    )
+    parser.add_argument(
+        "--collection",
+        default=None,
+        metavar="NAME",
+        help="Create a single named collection (e.g. --collection docs-rust)",
     )
     parser.add_argument(
         "--recreate",
@@ -258,8 +318,20 @@ def main():
         verify_collections(qdrant_url, api_key)
         return
 
+    collection_set = "all"
+    if args.arxiv_only:
+        collection_set = "arxiv"
+    elif args.docs_only:
+        collection_set = "docs"
+
     print(f"Connecting to Qdrant at {qdrant_url}")
-    results = create_all_collections(qdrant_url, api_key, recreate=args.recreate)
+    results = create_all_collections(
+        qdrant_url,
+        api_key,
+        recreate=args.recreate,
+        collection_set=collection_set,
+        single_collection=args.collection,
+    )
 
     created = sum(1 for v in results.values() if v)
     skipped = len(results) - created

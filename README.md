@@ -46,7 +46,7 @@ Production Arxiv RAG stack for DGX Spark — hybrid dense+sparse retrieval, BGE-
                         └─────────────────────────────────────────────────┘
 
   ┌──────────────────────────────────────────────────────────────────────┐
-  │                     Qdrant Collections (14 total)                   │
+  │                     Qdrant Collections (22 total (14 arXiv + 8 docs))                   │
   │                                                                      │
   │  arXiv (catch-all)      arxiv-cs-ml-ai       arxiv-cs-systems-theory│
   │  arxiv-condmat          arxiv-astro           arxiv-hep              │
@@ -340,51 +340,335 @@ python ingest/04_ingest_sparse.py \
 **Run in parallel with Step 2:** Dense (~18 hrs) dominates — start both simultaneously.
 Both scripts write separate progress files so they don't interfere.
 
-### Step 4: PDF full-text ingestion *(your own PDFs — not Arxiv abstracts)*
+---
 
-This pipeline is for PDFs you have downloaded or curated — **not** the Arxiv
-abstract corpus (which is already indexed as clean text in Steps 2–3).
+## Custom Knowledge Base — PDF & Web Documentation
 
-It includes:
-- **PyMuPDF** text extraction with **unstructured** fallback for complex layouts
-- **tiktoken** chunking (CHUNK_SIZE / CHUNK_OVERLAP from `.env`)
-- **HDBSCAN + UMAP** clustering to auto-detect topic groups across your PDF set
-- **Qwen3** (local vLLM) to name each cluster — so PDFs get routed to the right collection automatically
+This is as important as the arXiv index. The same hybrid retrieval + reranking
+pipeline that searches 2.96M arXiv abstracts also searches your own curated
+documentation — language references, API docs, framework guides, tool manuals.
+
+The result: a single RAG query simultaneously searches arXiv papers AND your tech
+documentation, with the cross-encoder deciding what is most relevant.
+
+---
+
+### What the Python pipeline does
+
+The ingestion system we have built goes beyond simple text splitting:
+
+| Script | Input | Key Python libraries |
+|---|---|---|
+| `05_ingest_pdfs.py` | PDF files | PyMuPDF, unstructured, tiktoken, HDBSCAN, UMAP, scikit-learn |
+| `06_caption_figures.py` | PDF files | PyMuPDF, vLLM vision model (Qwen2-VL) |
+| `07_ingest_html_docs.py` | URLs / HTML | requests, BeautifulSoup4, tiktoken |
+
+**The HDBSCAN auto-classification pipeline** (scripts 05 + 06):
+1. Extract full text from PDFs with PyMuPDF — preserves structure, handles multi-column layouts
+2. Fallback to `unstructured` for PDFs with complex formatting (scanned pages, mixed content)
+3. Chunk with tiktoken (cl100k_base) at CHUNK_SIZE / CHUNK_OVERLAP tokens — the same tokeniser GPT uses
+4. Embed all chunks with BGE-M3 dense vectors (1024-dim)
+5. Reduce to 5 dimensions with UMAP — compresses the embedding space to reveal topic clusters
+6. Cluster with HDBSCAN — finds the number of topics automatically, no `k` to choose
+7. Send each cluster's representative texts to Qwen3 via local vLLM to generate a descriptive cluster name
+8. Route each chunk to its Qdrant collection based on the cluster name + filename keywords
+9. Upsert with rich payload: title, authors, year, page_num, chunk_idx, topic_id, topic_name
+
+**Why this matters**: a directory of 200 mixed PDFs (NeurIPS papers, Rust book printouts, Docker guides)
+is automatically sorted into the right collections without you labelling anything.
+
+**The HTML/URL crawler** (`07_ingest_html_docs.py`):
+- BFS crawler — follows same-domain links up to `--depth` levels
+- Content extraction using priority-ordered CSS selectors (Sphinx, Docusaurus, GitBook, ReadTheDocs)
+- Strips nav/footer/sidebar/cookie banners; preserves code blocks as plain text
+- Sitemap.xml discovery for comprehensive coverage
+- Politeness delay + progress file (resume interrupted ingestion)
+
+---
+
+### Documentation collections
+
+Run this once to create all arXiv + documentation collections:
 
 ```bash
-# Ingest a directory of PDFs
+python ingest/02_create_collections.py                   # all 22 collections
+python ingest/02_create_collections.py --arxiv-only      # 14 arXiv only
+python ingest/02_create_collections.py --docs-only       # 8 docs only
+python ingest/02_create_collections.py --collection docs-rust  # one at a time
+python ingest/02_create_collections.py --verify-only     # check what exists
+```
+
+| Collection | Contents | Ingest method |
+|---|---|---|
+| `docs-python` | Python stdlib, NumPy, Pandas, FastAPI, LangChain, Pydantic | HTML crawl or PDF |
+| `docs-rust` | The Rust Book, std lib, Cargo, Tokio, Axum, Serde | HTML crawl |
+| `docs-javascript` | MDN Web Docs, Node.js, TypeScript, React, Next.js | HTML crawl |
+| `docs-docker` | Docker Engine, Compose, Buildx, Kubernetes, Helm | HTML crawl or PDF |
+| `docs-anthropic` | Claude API, Computer Use (CUA), Model Context Protocol | HTML crawl |
+| `docs-applescript` | AppleScript Language Guide, macOS scripting | HTML crawl or PDF |
+| `docs-devops` | GitHub Actions, Terraform, Ansible, Prometheus, Grafana | HTML crawl |
+| `docs-web` | HTML5, CSS3, Web APIs, HTTP standards | HTML crawl |
+
+Collections prefixed `openwebui_` in Qdrant are managed by Open WebUI's built-in
+document upload feature — those are separate and do not interfere.
+
+---
+
+### Step 4: PDF ingestion (your own documents)
+
+This pipeline handles any PDF — research papers you downloaded, printed documentation,
+exported reports, textbooks.
+
+```bash
+# Ingest a directory of PDFs (auto-classifies into collections)
 python ingest/05_ingest_pdfs.py --input-dir /path/to/your/pdfs/
 
-# Force a specific collection (skip auto-classification):
-python ingest/05_ingest_pdfs.py --input-dir ./pdfs/ --collection arxiv-cs-ml-ai
+# Force a specific collection (skip auto-classification)
+python ingest/05_ingest_pdfs.py --input-dir ./pdfs/ --collection docs-docker
 
-# Dry run to preview classification without writing to Qdrant:
+# Dry run — preview HDBSCAN classification without writing to Qdrant
 python ingest/05_ingest_pdfs.py --input-dir ./pdfs/ --dry-run
+
+# Verbose — show cluster names assigned by Qwen3 + routing decisions
+python ingest/05_ingest_pdfs.py --input-dir ./pdfs/ --verbose
 ```
-**Timing:** ~2–4 min per PDF (10–30 pages). HDBSCAN clusters the whole batch once — faster with more PDFs.
 
-### Step 5: Figure captioning *(PDFs only — not Arxiv abstracts)*
+**Timing:** ~2–4 min per PDF (10–30 pages). HDBSCAN clusters the whole batch in one pass —
+processing 100 PDFs is only marginally slower than 10.
 
-Generates captions for figures, tables, and diagrams in PDFs using a vision model
-(Qwen2-VL via vLLM). Captions are stored as `type="figure_caption"` points in
-Qdrant alongside the text chunks, making figures searchable.
+**Resume:** re-running skips already-processed files. Point IDs are deterministic hashes
+of `filename + chunk_idx` — upserts are idempotent.
 
-The Arxiv abstract corpus does **not** need this step — abstracts are text-only
-and do not contain embedded figures.
+---
+
+### Step 5: Figure captioning (PDFs only)
+
+Generates captions for figures, diagrams, and tables using a vision model (Qwen2-VL via vLLM).
+Captions are stored as `type="figure_caption"` points alongside text chunks — figures become searchable.
 
 ```bash
-# Caption figures in all PDFs in a directory
+# Caption all figures in a directory
 python ingest/06_caption_figures.py \
     --input-dir /path/to/pdfs/ \
-    --pages-with-figures-only   # skip pages with only text
+    --pages-with-figures-only       # skip text-only pages (much faster)
 
-# Single file:
-python ingest/06_caption_figures.py \
-    --input-dir /path/to/pdfs/ \
-    --file my-paper.pdf
+# Single file
+python ingest/06_caption_figures.py --input-dir ./pdfs/ --file paper.pdf
 ```
-**Timing:** ~30–60 seconds per page with figures. Vision inference is slow but offline —
-run it once at ingestion, never at query time.
+
+**Timing:** ~30–60 seconds per page with figures. Run once — vision inference never
+happens at query time.
+
+---
+
+### Step 6: Web / HTML documentation ingestion
+
+Ingest any documentation site directly from its URL. The crawler extracts clean
+article text, chunks it, and stores it with the source URL in the payload.
+
+#### Rust
+
+```bash
+# The Rust Book (comprehensive, depth 2 covers all chapters)
+python ingest/07_ingest_html_docs.py \
+    --url https://doc.rust-lang.org/book/ \
+    --collection docs-rust --tag rust-book --depth 2
+
+# Rust std library reference
+python ingest/07_ingest_html_docs.py \
+    --url https://doc.rust-lang.org/std/ \
+    --collection docs-rust --tag rust-std --depth 2
+
+# Tokio async runtime docs
+python ingest/07_ingest_html_docs.py \
+    --url https://docs.rs/tokio/latest/tokio/ \
+    --collection docs-rust --tag tokio
+```
+
+**Offline alternative:** The Rust Book has an official offline build:
+```bash
+rustup docs --book    # opens locally; scrape with --url file:///... or use wget
+```
+
+#### Python
+
+```bash
+# Python stdlib
+python ingest/07_ingest_html_docs.py \
+    --url https://docs.python.org/3/library/ \
+    --collection docs-python --tag python-stdlib --depth 2
+
+# FastAPI
+python ingest/07_ingest_html_docs.py \
+    --url https://fastapi.tiangolo.com/ \
+    --collection docs-python --tag fastapi --depth 2
+
+# LangChain
+python ingest/07_ingest_html_docs.py \
+    --url https://python.langchain.com/docs/introduction/ \
+    --collection docs-python --tag langchain --depth 2
+
+# Pydantic v2
+python ingest/07_ingest_html_docs.py \
+    --url https://docs.pydantic.dev/latest/ \
+    --collection docs-python --tag pydantic --depth 2
+```
+
+#### JavaScript / TypeScript
+
+```bash
+# MDN Web Docs — JavaScript reference (authoritative)
+python ingest/07_ingest_html_docs.py \
+    --url https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference \
+    --collection docs-javascript --tag mdn-js --depth 2
+
+# TypeScript handbook
+python ingest/07_ingest_html_docs.py \
+    --url https://www.typescriptlang.org/docs/ \
+    --collection docs-javascript --tag typescript --depth 2
+
+# Node.js docs
+python ingest/07_ingest_html_docs.py \
+    --url https://nodejs.org/en/docs \
+    --collection docs-javascript --tag nodejs --depth 2
+```
+
+#### Docker
+
+```bash
+# Docker Engine documentation
+python ingest/07_ingest_html_docs.py \
+    --url https://docs.docker.com/engine/ \
+    --collection docs-docker --tag docker-engine --depth 2
+
+# Docker Compose
+python ingest/07_ingest_html_docs.py \
+    --url https://docs.docker.com/compose/ \
+    --collection docs-docker --tag docker-compose --depth 2
+
+# Kubernetes docs (comprehensive — use sitemap for full coverage)
+python ingest/07_ingest_html_docs.py \
+    --url https://kubernetes.io/docs/ \
+    --collection docs-docker --tag kubernetes --depth 2 --sitemap
+```
+
+**Offline alternative:** Docker docs are open source on GitHub. Clone and ingest markdown:
+```bash
+git clone https://github.com/docker/docs.git /tmp/docker-docs
+# Then use 05_ingest_pdfs.py with markdown support or convert to PDF
+```
+
+#### Anthropic / Claude API / Computer Use (CUA)
+
+```bash
+# Full Anthropic docs — Claude API, models, prompting guides
+python ingest/07_ingest_html_docs.py \
+    --url https://docs.anthropic.com/en/docs/ \
+    --collection docs-anthropic --tag anthropic-api --depth 2
+
+# Computer Use (CUA) — specific operator guide
+python ingest/07_ingest_html_docs.py \
+    --url https://docs.anthropic.com/en/docs/agents-and-tools/computer-use \
+    --collection docs-anthropic --tag cua --depth 1
+
+# Model Context Protocol (MCP)
+python ingest/07_ingest_html_docs.py \
+    --url https://modelcontextprotocol.io/docs/ \
+    --collection docs-anthropic --tag mcp --depth 2
+```
+
+#### AppleScript
+
+AppleScript Language Guide is hosted on the Apple Developer site with access controls.
+The most reliable approach is a wget mirror:
+
+```bash
+# Mirror the AppleScript Language Guide
+wget --mirror --convert-links --adjust-extension \
+    --page-requisites --no-parent \
+    -P /tmp/applescript-docs \
+    "https://developer.apple.com/library/archive/documentation/AppleScript/Conceptual/AppleScriptLangGuide/"
+
+# Then ingest from the local mirror
+python ingest/07_ingest_html_docs.py \
+    --url "file:///tmp/applescript-docs/developer.apple.com/library/archive/documentation/AppleScript/" \
+    --collection docs-applescript --tag applescript-lang-guide
+
+# Script Editor built-in dictionaries (export as PDF from Script Editor > File > Export)
+# Then ingest with: python ingest/05_ingest_pdfs.py --input-dir ./applescript-pdfs/ \
+#                       --collection docs-applescript
+```
+
+#### DevOps
+
+```bash
+# GitHub Actions docs
+python ingest/07_ingest_html_docs.py \
+    --url https://docs.github.com/en/actions \
+    --collection docs-devops --tag github-actions --depth 2
+
+# Terraform documentation
+python ingest/07_ingest_html_docs.py \
+    --url https://developer.hashicorp.com/terraform/docs \
+    --collection docs-devops --tag terraform --depth 2
+
+# Prometheus
+python ingest/07_ingest_html_docs.py \
+    --url https://prometheus.io/docs/introduction/overview/ \
+    --collection docs-devops --tag prometheus --depth 2
+
+# Grafana
+python ingest/07_ingest_html_docs.py \
+    --url https://grafana.com/docs/grafana/latest/ \
+    --collection docs-devops --tag grafana --depth 1
+```
+
+---
+
+### Keeping the index fresh
+
+Documentation sites update regularly. Maintain freshness with:
+
+```bash
+# Re-ingest a URL — already-seen URLs are skipped (progress file)
+# Delete the progress file entry to force re-ingestion:
+grep -v "doc.rust-lang.org" data/html_ingest_progress.txt > /tmp/prog.txt \
+    && mv /tmp/prog.txt data/html_ingest_progress.txt
+
+# Or use --progress-file with a per-source file:
+python ingest/07_ingest_html_docs.py \
+    --url https://docs.anthropic.com/en/docs/ \
+    --collection docs-anthropic \
+    --progress-file data/anthropic_progress.txt
+
+# Wipe and re-ingest a collection entirely:
+python ingest/02_create_collections.py --collection docs-anthropic --recreate
+python ingest/07_ingest_html_docs.py \
+    --url https://docs.anthropic.com/en/docs/ \
+    --collection docs-anthropic --depth 2
+```
+
+---
+
+### Browsing your collections in Open WebUI
+
+Every Qdrant collection is visible in the RAG proxy's models endpoint:
+
+```bash
+curl http://localhost:8002/v1/models   # lists all indexed collections
+```
+
+From Open WebUI (Path B — RAG proxy connection), pass collection filters in the request:
+
+```json
+{
+    "model": "arxiv-rag",
+    "messages": [{"role": "user", "content": "How do I use async/await in Rust?"}],
+    "collections": ["docs-rust", "arxiv-cs-ml-ai"]
+}
+```
+
+Without `collections`, the query router picks automatically from all collections.
 
 ### Timing Table
 

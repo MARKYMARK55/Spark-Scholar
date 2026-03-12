@@ -1,19 +1,32 @@
 # core_services/core_services.yml
 # =================================
-# Core services: LiteLLM proxy, Open WebUI, Langflow.
+# Core services: LiteLLM (local) + LiteLLM (cloud) + Open WebUI + Langflow.
 # Redis, SearXNG, and Langfuse have their own YML files in this directory.
+#
+# ── LiteLLM local models (SparkRun + BGE-M3) on port 4000 ───────────────────
+# Config: core_services/litellm_local.yaml
+# Cloud models: add via LiteLLM admin UI (http://localhost:4000/ui) or mount
+#               litellm_cloud.yaml instead — see core_services/litellm_cloud.yaml
+#
+# Open WebUI connections (add manually after first start):
+#   Admin → Settings → Connections:
+#   ① http://litellm:4000   — local SparkRun models (primary, pre-configured)
+#   ② http://rag-proxy:8002 — Arxiv RAG-augmented (add separately)
+#
+# Qdrant is used for Open WebUI document uploads (built-in RAG / Path A).
+# Our Arxiv collections are searched separately via the RAG proxy (Path B).
 #
 # Prerequisites
 # -------------
-# - llm-net Docker network must exist:  docker network create llm-net
-# - env/.env must be configured (copy from .env.example, see env/README.md)
-# - SparkRun must have the inference model running on port 8000
-#   See: github.com/scitrera/oss-spark-run
+# - llm-net Docker network:  docker network create llm-net
+# - env/.env configured (see env/README.md)
+# - SparkRun running the inference model:  github.com/scitrera/oss-spark-run
 #
 # Usage
 # -----
 #   docker compose -f core_services/core_services.yml up -d
 #   docker compose -f core_services/core_services.yml logs -f litellm
+#   docker compose -f core_services/core_services.yml logs -f litellm-cloud
 #
 # Port map
 # --------
@@ -38,7 +51,7 @@ volumes:
 
 services:
 
-  # ── LiteLLM Postgres (required for spend tracking + admin UI) ────────────────
+  # ── LiteLLM Postgres (shared between both LiteLLM instances) ─────────────
   litellm-db:
     image: postgres:16-alpine
     container_name: litellm-db
@@ -61,9 +74,9 @@ services:
         limits:
           memory: 1g
 
-  # ── LiteLLM Proxy ─────────────────────────────────────────────────────────────
-  # Unified OpenAI-compatible gateway in front of all models (local + cloud).
-  # All services call LiteLLM with simple-api-key; admin ops use LITELLM_MASTER_KEY.
+  # ── LiteLLM Local — SparkRun + BGE-M3 models (port 4000) ─────────────────
+  # Serves: local-model, vllm, bge-m3-embedder, bge-reranker-v2-m3
+  # Config: core_services/litellm_local.yaml
   litellm:
     image: ghcr.io/berriai/litellm:main-latest
     container_name: litellm
@@ -73,8 +86,7 @@ services:
     ports:
       - "4000:4000"
     volumes:
-      - ./litellm_config.yaml:/app/config.yaml:ro
-      - ~/.cache/huggingface:/root/.cache/huggingface:ro
+      - ./litellm_local.yaml:/app/config.yaml:ro
     env_file:
       - ../env/.env
     environment:
@@ -97,10 +109,18 @@ services:
         limits:
           memory: 4g
 
-  # ── Open WebUI ────────────────────────────────────────────────────────────────
-  # Web chat interface. Connects to LiteLLM for all model requests.
-  # For RAG-augmented chat, add the rag-proxy as an additional connection in:
-  #   Admin → Settings → Connections → Add Connection → http://rag-proxy:8002
+
+  # ── Open WebUI ─────────────────────────────────────────────────────────────
+  # Primary UI. Pre-configured for:
+  #   - LiteLLM local (port 4000) as primary OpenAI endpoint
+  #   - Qdrant as vector DB for document uploads (Path A built-in RAG)
+  #   - BGE-M3 via LiteLLM for document embedding
+  #   - SearXNG for web search
+  #
+  # After startup, manually add these extra connections in the UI:
+  #   Admin → Settings → Connections → + Add Connection:
+  #     Name: "Cloud Models"   URL: http://litellm-cloud:4001/v1  Key: simple-api-key
+  #     Name: "Arxiv RAG"      URL: http://rag-proxy:8002/v1      Key: simple-api-key
   openwebui:
     image: ghcr.io/open-webui/open-webui:cuda
     container_name: openwebui
@@ -115,12 +135,33 @@ services:
     env_file:
       - ../env/.env
     environment:
+      # ── Primary LLM backend: LiteLLM local ────────────────────────────────
       OPENAI_API_BASE_URL: "http://litellm:4000/v1"
       OPENAI_API_KEY: "simple-api-key"
       WEBUI_SECRET_KEY: "simple-api-key"
       ENABLE_OLLAMA_API: "false"
       ENABLE_OPENAI_API: "true"
-      # Web search via SearXNG
+
+      # ── Qdrant vector DB for document uploads (Path A built-in RAG) ───────
+      # Open WebUI manages its own collections in Qdrant (prefix: openwebui_)
+      # These are separate from the Arxiv/docs collections.
+      # For full RAG with Arxiv index → use Path B (rag-proxy connection).
+      VECTOR_DB: "qdrant"
+      QDRANT_URI: "http://qdrant:6333"
+      QDRANT_API_KEY: "simple-api-key"
+      QDRANT_COLLECTION_NAME_PREFIX: "openwebui"   # keeps OW collections separate
+
+      # ── Embedding + reranking via LiteLLM local ───────────────────────────
+      RAG_EMBEDDING_ENGINE: "openai"
+      RAG_EMBEDDING_MODEL: "bge-m3-embedder"
+      OPENAI_API_BASE_URL_FOR_RAG: "http://litellm:4000/v1"
+      RAG_RERANKING_MODEL: "bge-reranker-v2-m3"
+
+      # ── Chunking (for document uploads) ───────────────────────────────────
+      CHUNK_SIZE: "1500"
+      CHUNK_OVERLAP: "200"
+
+      # ── Web search via SearXNG ─────────────────────────────────────────────
       ENABLE_WEB_SEARCH: "true"
       ENABLE_SEARCH_QUERY_GENERATION: "false"
       WEB_SEARCH_ENGINE: "searxng"
@@ -128,14 +169,12 @@ services:
       WEB_SEARCH_RESULT_COUNT: "20"
       WEB_SEARCH_CONCURRENT_REQUESTS: "5"
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: "true"
-      # Qdrant vector DB for Open WebUI document uploads (Path A)
-      VECTOR_DB: "qdrant"
-      QDRANT_URI: "http://qdrant:6333"
-      QDRANT_API_KEY: "simple-api-key"
-      # BGE-M3 as the embedding model via LiteLLM
-      RAG_EMBEDDING_ENGINE: "openai"
-      RAG_EMBEDDING_MODEL: "bge-m3-embedder"
-      RAG_RERANKING_MODEL: "bge-reranker-v2-m3"
+
+      # ── UI / Auth ──────────────────────────────────────────────────────────
+      WEBUI_NAME: "DGX Spark"
+      ENABLE_SIGNUP: "false"
+      DEFAULT_LOCALE: "en-GB"
+
     depends_on:
       litellm:
         condition: service_healthy
@@ -155,8 +194,9 @@ services:
         limits:
           memory: 8g
 
-  # ── Langflow ──────────────────────────────────────────────────────────────────
-  # Visual pipeline builder for prototyping RAG flows and agent workflows.
+  # ── Langflow ─────────────────────────────────────────────────────────────
+  # Visual pipeline builder. Points at LiteLLM local by default.
+  # For cloud models, update OPENAI_API_BASE to http://litellm-cloud:4001/v1.
   langflow:
     image: langflowai/langflow:latest
     container_name: langflow
