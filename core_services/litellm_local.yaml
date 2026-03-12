@@ -36,6 +36,49 @@ model_list:
       api_base: "os.environ/VLLM_URL"
       api_key:  "os.environ/VLLM_API_KEY"
 
+  # ── Secondary LLM: Phi Mini — fast/light model (SparkRun, port 8000) ────────
+  #
+  # Microsoft Phi-4-mini (3.8B) or Phi-3.5-mini (3.8B) — tiny but surprisingly
+  # capable, especially for structured output, classification, and code tasks.
+  #
+  # WHY add a second small model?
+  #   Your DGX Spark has 128 GB unified memory. The primary LLM (Qwen3-30B-A3B,
+  #   Nemotron-56B, etc.) typically uses 40–80 GB. When VRAM headroom allows,
+  #   SparkRun can serve a second lightweight model simultaneously on a separate
+  #   port (e.g. 8001). Phi Mini fits in ~4–8 GB — well within the margin.
+  #
+  # WHEN to use Phi Mini instead of the primary model:
+  #   • Query classification / routing        (is this query about ML or biology?)
+  #   • Short summarisation of retrieved chunks before reranking
+  #   • Function-calling / tool-use (Phi 4 Mini is fine-tuned for this)
+  #   • Fast autocomplete / code completion in Langflow prototypes
+  #   • Answering simple factual questions where a 30B+ model is overkill
+  #   • When the primary model is under load and you need parallel capacity
+  #
+  # HOW to load it with SparkRun:
+  #   sparkrun start microsoft/Phi-4-mini-instruct --port 8001
+  #   (or Phi-3.5-mini-instruct — both work identically in the proxy)
+  #
+  # The VLLM_PHI_URL env var defaults to host.docker.internal:8001.
+  # Add it to env/.env if you use a non-standard port.
+  #
+  # Comment out or remove this block if you are not running Phi Mini.
+  - model_name: phi-mini
+    litellm_params:
+      model: "openai/phi-mini"
+      api_base: "os.environ/VLLM_PHI_URL"
+      api_key:  "os.environ/VLLM_API_KEY"
+      stream_timeout: 120
+      timeout: 120
+    model_info:
+      description: "Phi-4-mini (3.8B) served by SparkRun — fast, low-VRAM secondary model"
+
+  - model_name: phi                          # short alias
+    litellm_params:
+      model: "openai/phi-mini"
+      api_base: "os.environ/VLLM_PHI_URL"
+      api_key:  "os.environ/VLLM_API_KEY"
+
   # ── BGE-M3 Dense Embedder (vLLM, port 8025) ──────────────────────────────
   - model_name: bge-m3-embedder
     litellm_params:
