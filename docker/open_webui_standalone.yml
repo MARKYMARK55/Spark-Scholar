@@ -16,6 +16,10 @@
 
 name: openwebui
 
+volumes:
+  openwebui_data:
+    name: arxiv_openwebui_data
+
 networks:
   llm-net:
     external: true
@@ -31,9 +35,9 @@ services:
 
     volumes:
       # Persistent Open WebUI data (chat history, settings, uploaded files)
-      - /home/mark/openWebUI:/app/backend/data
+      - openwebui_data:/app/backend/data
       # HuggingFace model cache (shared with host to avoid re-downloads)
-      - /home/mark/.cache/huggingface:/root/.cache/huggingface
+      - ~/.cache/huggingface:/root/.cache/huggingface
 
     env_file:
       - ../env/.env
