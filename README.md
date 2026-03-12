@@ -320,31 +320,30 @@ python ingest/01_download_arxiv.py --output-dir data/ --max-records 10000
 
 ### Step 2: Dense embedding + indexing (Arxiv abstracts)
 ```bash
-# Indexing mode — stop production dense embedder first, start indexing variant
-docker stop bge-m3-dense-embedder
-docker compose -f docker/bge_m3_dense_embedder_indexing.yml up -d
+# Switch to indexing mode — 50% GPU utilisation for maximum throughput
+bash scripts/start_indexing_mode.sh
 
 # Run ingestion (batch 256 for indexing mode throughput)
 python ingest/03_ingest_dense.py \
-    --input data/arxiv-metadata.jsonl \
+    --input data/arxiv_with_abstract.jsonl \
     --batch-size 256
 
-# When done, switch back to production embedder
-docker stop bge-m3-embedder
-docker compose --profile embedding up -d bge-m3-dense-embedder
+# When done, switch back to production mode (12% GPU)
+bash scripts/stop_indexing_mode.sh
 ```
 **Timing:** ~18–22 hours for 2.96M papers at ~1,100 docs/s (indexing mode).
-**Resume:** Re-run with `--skip N` — upserts are idempotent (deterministic point IDs).
+**Resume:** Progress is tracked in `data/arxiv_with_abstract_dense_progress.txt` — re-running skips already-processed records. Upserts are idempotent (deterministic point IDs from arxiv_id hash).
 
 ### Step 3: Sparse embedding + indexing (Arxiv abstracts)
 ```bash
-# Can run in parallel with Step 2 — different GPU slice
+# Run sparse indexing — can overlap with dense (sparse uses the separate FastAPI service)
 python ingest/04_ingest_sparse.py \
-    --input data/arxiv-metadata.jsonl \
+    --input data/arxiv_with_abstract.jsonl \
     --batch-size 64
 ```
 **Timing:** ~6–8 hours for 2.96M papers at ~1,400–1,600 docs/s.
-**Run parallel:** Dense (~18 hrs) dominates — start both at the same time.
+**Run in parallel with Step 2:** Dense (~18 hrs) dominates — start both simultaneously.
+Both scripts write separate progress files so they don't interfere.
 
 ### Step 4: PDF full-text ingestion *(your own PDFs — not Arxiv abstracts)*
 
@@ -415,6 +414,162 @@ Measured on DGX Spark (Grace Blackwell, 128 GB unified memory):
 
 See `docs/embedding_speed.md` for full tuning guide, VRAM budget breakdown, and
 how to switch between production and indexing modes.
+
+---
+
+## Searching the Index
+
+Three CLI tools in `query/` cover every search mode. All three call the running
+**embedding services over HTTP** — they do not load any model locally and are safe
+to run alongside the full production stack.
+
+### Services required
+
+| Script | Services needed |
+|---|---|
+| `query/dense_search.py` | BGE-M3 dense (port 8025) + Qdrant (port 6333) |
+| `query/sparse_search.py` | BGE-M3 sparse (port 8035) + Qdrant (port 6333) |
+| `query/hybrid_search.py` | dense + sparse + reranker (port 8020) + Qdrant |
+
+Start them first if not already running:
+```bash
+bash scripts/start_embedding_stack.sh
+```
+
+---
+
+### Dense search — semantic similarity
+
+Best for: concept-level queries, synonyms, paraphrase variation, cross-domain discovery.
+
+```bash
+# Simple query — searches all 13 subject collections and RRF-merges
+python query/dense_search.py --query "variational inference latent variable models"
+
+# Restrict to one collection
+python query/dense_search.py --query "RLHF alignment language models" \
+    --collection arxiv-cs-ml-ai
+
+# With filters
+python query/dense_search.py --query "stochastic differential equations" \
+    --year-min 2020 --year-max 2024
+
+# More results + JSON output
+python query/dense_search.py --query "high frequency trading market microstructure" \
+    --top-k 20 --json
+
+# Filter by author
+python query/dense_search.py --query "diffusion models" --author "Ho"
+```
+
+**How it works:**
+The query is encoded to a 1024-dim vector by the vLLM BGE-M3 service, then an HNSW
+approximate nearest-neighbour search is run in each collection's `dense_embedding`
+slot. When searching all collections, results are merged with RRF.
+
+---
+
+### Sparse search — exact keyword precision
+
+Best for: specific model names (`GPT-4`, `LLaMA-3.1`), author names, arXiv IDs,
+equations, chemical formulae, and any query where the exact token matters more than
+the semantic meaning.
+
+```bash
+# Simple keyword query
+python query/sparse_search.py --query "attention mechanism transformers self-attention"
+
+# Exact author + title keywords
+python query/sparse_search.py --query "Vaswani attention all you need" \
+    --year-min 2017 --year-max 2018
+
+# Search by arXiv ID substring
+python query/sparse_search.py --query "2305.14314"
+
+# Restrict to one collection
+python query/sparse_search.py --query "Hawkes process excitation kernel" \
+    --collection arxiv-stat-eess
+
+# JSON output for programmatic use
+python query/sparse_search.py --query "bge-m3 embedding multilingual" --json
+```
+
+**How it works:**
+The query is encoded by the BGE-M3 sparse service to a SPLADE-style vector of
+(token_id → weight) pairs (typically 100–400 non-zero terms). Qdrant's inverted
+index scores the dot product against each document's `sparse_text` slot. Results
+from all collections are merged with RRF.
+
+---
+
+### Hybrid search — full pipeline (recommended)
+
+Best for: everything. Combines dense semantic retrieval + sparse keyword matching via
+Qdrant's native server-side RRF, then cross-encoder reranks the top candidates.
+This is the same pipeline used by the RAG proxy for every chat message.
+
+```bash
+# Full pipeline — auto-routes to relevant collections, reranks
+python query/hybrid_search.py --query "diffusion models image generation"
+
+# More candidates before reranking (default: top-50 reranked → top-10)
+python query/hybrid_search.py --query "RLHF alignment" \
+    --rerank-n 100 --top-k 20
+
+# Skip reranking (faster, useful for debugging retrieval quality)
+python query/hybrid_search.py --query "Higgs boson discovery" --no-rerank
+
+# With all filters + verbose timing
+python query/hybrid_search.py \
+    --query "protein folding AlphaFold" \
+    --year-min 2020 \
+    --author "Jumper" \
+    --verbose
+
+# Force a specific collection (bypass routing)
+python query/hybrid_search.py --query "quantum error correction" \
+    --collection arxiv-quantph-grqc
+
+# JSON output — includes rerank_score, rrf_score, source collection
+python query/hybrid_search.py --query "superconductor cuprate" --json
+```
+
+**How it works:**
+1. **Route** — `pipeline/router.py` maps the query to 1-3 subject collections using keyword heuristics.
+2. **Encode** — dense and sparse vectors are computed in parallel (async).
+3. **Retrieve** — each collection runs `Prefetch([dense, sparse]) + FusionQuery(RRF)` natively inside Qdrant.
+4. **Merge** — per-collection results are merged with a second Python-side RRF pass.
+5. **Rerank** — the top 50 candidates are scored jointly by the BGE-M3 cross-encoder.
+6. **Return** — top 10 results with `rerank_score`, `rrf_score`, `arxiv_id`, title, authors, abstract.
+
+**Verbose output example:**
+```
+Routing: 'diffusion models image generation' → ['arxiv-cs-ml-ai']        [routing]
+Retrieved 48 candidates in 0.31s                                          [retrieve]
+Reranked to 10 in 1.42s                                                   [rerank]
+Total: 1.73s                                                              [total]
+```
+
+---
+
+### Comparing all three modes
+
+```bash
+QUERY="contrastive learning self-supervised representations"
+
+echo "=== DENSE ==="
+python query/dense_search.py  --query "$QUERY" --top-k 5
+
+echo "=== SPARSE ==="
+python query/sparse_search.py --query "$QUERY" --top-k 5
+
+echo "=== HYBRID ==="
+python query/hybrid_search.py --query "$QUERY" --top-k 5
+```
+
+The hybrid results typically include high-recall papers from dense (conceptually related
+but different terminology) plus high-precision papers from sparse (exact term matches)
+and then cross-encoder reranking promotes the most relevant of both.
 
 ---
 
@@ -762,46 +917,71 @@ python3 -c "from pipeline.router import route_paper; print(route_paper('cs.LG cs
 
 ```
 arxiv-rag/
-├── .env.example              # Template for env/.env
-├── .gitignore
-├── README.md                 # This file
+├── .env.example                        # Template for env/.env (safe placeholder values)
+├── .gitignore                          # env/.env + data/ excluded
+├── README.md                           # This file
+├── requirements.txt                    # Root-level Python dependencies
 │
-├── pipeline/                 # Core RAG pipeline
+├── pipeline/                           # Core RAG pipeline (imported by api/ and ingest/)
 │   ├── __init__.py
-│   ├── embeddings.py         # Dense + sparse embedding clients
-│   ├── router.py             # Collection routing logic
-│   ├── cache.py              # Redis result cache
-│   ├── hybrid_search.py      # Qdrant hybrid search (Prefetch + RRF)
-│   ├── reranker.py           # BGE-M3 cross-encoder reranking
-│   ├── langgraph_pipeline.py # LangGraph orchestration (11 nodes)
-│   └── tracer.py             # Langfuse observability
+│   ├── embeddings.py                   # Dense + sparse HTTP clients (calls services)
+│   ├── router.py                       # Collection routing — query keywords → collections
+│   ├── cache.py                        # Redis result cache (SHA-256 keyed)
+│   ├── hybrid_search.py                # Qdrant Prefetch + FusionQuery(RRF) + async fan-out
+│   ├── reranker.py                     # BGE-M3 cross-encoder via vLLM /score
+│   ├── langgraph_pipeline.py           # LangGraph StateGraph (11 nodes)
+│   └── tracer.py                       # Langfuse spans (no-op if keys absent)
 │
-├── api/                      # FastAPI RAG proxy
-│   ├── rag_proxy.py          # OpenAI-compatible proxy endpoint
+├── query/                              # CLI search tools (all use HTTP services, no local model)
+│   ├── __init__.py
+│   ├── dense_search.py                 # Dense-only search via BGE-M3 vLLM (port 8025)
+│   ├── sparse_search.py                # Sparse-only search via BGE-M3 FastAPI (port 8035)
+│   └── hybrid_search.py                # Full hybrid + rerank (recommended)
+│
+├── api/                                # FastAPI RAG proxy (OpenAI-compatible)
+│   ├── rag_proxy.py                    # /v1/chat/completions endpoint with source citations
 │   ├── Dockerfile
 │   └── requirements.txt
 │
-├── ingest/                   # Data ingestion scripts
+├── ingest/                             # Data ingestion scripts (run once)
 │   ├── __init__.py
-│   ├── 01_download_arxiv.py  # Download from HuggingFace
-│   ├── 02_create_collections.py # Create Qdrant collections
-│   ├── 03_ingest_dense.py    # Dense embedding + upsert
-│   ├── 04_ingest_sparse.py   # Sparse embedding + upsert
-│   ├── 05_ingest_pdfs.py     # Full-text PDF ingestion
-│   └── 06_caption_figures.py # Vision LLM figure captioning
+│   ├── 01_download_arxiv.py            # Stream Cornell-University/arxiv from HuggingFace → JSONL
+│   ├── 02_create_collections.py        # Create 14 Qdrant collections (dense + sparse config)
+│   ├── 03_ingest_dense.py              # BGE-M3 dense embed + upsert (Arxiv abstracts)
+│   ├── 04_ingest_sparse.py             # BGE-M3 sparse embed + upsert (Arxiv abstracts)
+│   ├── 05_ingest_pdfs.py               # *** PDFs only *** full-text + HDBSCAN clustering
+│   └── 06_caption_figures.py           # *** PDFs only *** vision model figure captioning
 │
-├── sparse_embedder/          # BGE-M3 sparse embedding service
-│   ├── sparse_embed.py       # FastAPI app
+├── sparse_embedder/                    # BGE-M3 SPLADE service (FastAPI, port 8035)
+│   ├── sparse_embed.py                 # /encode + /health endpoints
 │   ├── Dockerfile
 │   └── requirements.txt
 │
 ├── config/
-│   ├── qdrant.yaml           # Qdrant server config
-│   └── litellm_config.yaml   # LiteLLM model definitions
+│   ├── qdrant.yaml                     # Qdrant server config (GPU indexing, HNSW settings)
+│   └── litellm_config.yaml             # LiteLLM model definitions
 │
 ├── docker/
-│   └── docker-compose.yml    # Full stack with profiles
+│   ├── docker-compose.yml              # Full stack with profiles (qdrant/embedding/core/rag-proxy/langfuse)
+│   ├── qdrant_standalone.yml           # Qdrant standalone (GPU HNSW, llm-net)
+│   ├── bge_m3_dense_embedder.yml       # vLLM dense embedder, port 8025, 12% GPU (production)
+│   ├── bge_m3_dense_embedder_indexing.yml # vLLM dense embedder, port 8026, 50% GPU (ingestion)
+│   ├── bge_m3_sparse_embedder.yml      # FastAPI sparse embedder, port 8035
+│   ├── bge_m3_reranker.yml             # vLLM reranker, port 8020 (required extra flags)
+│   ├── core_services.yml               # LiteLLM + Postgres + Open WebUI + Pipelines + Langflow
+│   └── open_webui_standalone.yml       # Open WebUI pre-configured for Qdrant + BGE-M3
+│
+├── docs/
+│   ├── embedding_speed.md              # VRAM budgets, throughput benchmarks, tuning guide
+│   └── open_webui_rag_setup.md         # Open WebUI manual document upload guide
+│
+├── scripts/
+│   ├── start_stack.sh                  # Start full stack with health polling
+│   ├── start_core_services_small.sh    # Start core services (LiteLLM, WebUI, etc.)
+│   ├── start_embedding_stack.sh        # Start all three embedding services
+│   ├── start_indexing_mode.sh          # Switch dense embedder to 50% GPU for bulk ingestion
+│   └── stop_indexing_mode.sh           # Switch back to 12% GPU production mode
 │
 └── env/
-    └── .env                  # Your actual secrets (gitignored)
+    └── .env                            # Your actual secrets — NEVER commit this file
 ```
