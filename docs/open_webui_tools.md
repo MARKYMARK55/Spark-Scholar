@@ -556,6 +556,321 @@ For one-off documents you don't want in the permanent index:
 
 ---
 
+## Installed Academic Research Tools
+
+The following tools are already installed in your Open WebUI workspace
+(`~/vllm/model_stack/openWebUI/workspace_tools/`). Import each JSON via
+**Workspace → Tools → Import**.
+
+### Quick Reference — All Sources
+
+| Tool | Source / Database | Coverage | API Key Required |
+|------|------------------|----------|-----------------|
+| **ArXiv Recent & Keyword Alert** | arXiv.org Atom API | 2.4M+ CS/physics/math preprints; keyword + category + date filter | None (free) |
+| **Semantic Scholar Graph** | Semantic Scholar (AI2) | 220M+ papers; search, citations, references, author graph | `SEMANTIC_SCHOLAR_API_KEY` |
+| **Ai2 Asta MCP Search** | Allen AI Asta MCP | Full-text semantic search over S2 corpus; ranked snippets | `ASTA_TOOL_KEY` |
+| **OpenAlex Academic Search** | OpenAlex | 250M+ works; authors, institutions, funders, open access | `OPENALEX_API_KEY` (optional, boosts rate limits) |
+| **CORE UK Tool** | CORE.ac.uk | 200M+ OA papers with direct PDF links; repository aggregator | `CORE_API_KEY` |
+| **Connected Papers Graph** | Connected Papers | Similarity graph; prior works, derivative works, visual clusters | `CONNECTED_PAPERS_API_KEY` |
+| **NCBI PubMed Fetch** | PubMed / NCBI | 35M+ biomedical papers; search by term or fetch by PMID | `NCBI_API_KEY` (optional) |
+| **Europe PMC OA & Preprint Search** | Europe PMC (EBI) | Life sciences OA papers, preprints, grants, books, patents | None (free) |
+| **Dimensions Lens Academic Graph** | Dimensions.ai / Lens.org | Publications, grants, patents, researchers, funding networks | `DIMENSIONS_API_KEY` (paid) / `LENS_API_KEY` |
+| **ResearchGate / Academia.edu** | ResearchGate, Academia.edu | Paper links, author profiles (no bulk API — returns search URLs) | None (link-based) |
+| **Consolidated Metadata Fetcher** | S2 + OpenAlex + CORE + Connected Papers + NCBI | Unified tool: one call, choose service + action | Per-service keys above |
+| **Google Gemini** | Google Generative AI | Multimodal reasoning; strong on math, tables, figures, recent papers | `GEMINI_API_KEY` |
+| **Grok Research & Reasoning** | xAI Grok-3 | Deep reasoning, math, code, obscure references, step-by-step thinking | `XAI_API_KEY` |
+| **OpenRouter Research LLM** | OpenRouter | Route to Claude, Gemini, Grok, Llama, Mistral, 200+ models | `OPENROUTER_API_KEY` |
+| **Perplexity Academic Q&A** | Perplexity Sonar | Cited answers; search filtered to arxiv, S2, Nature, PubMed, ScienceDirect | `PERPLEXITY_API_KEY` |
+
+---
+
+### Academic Database Tools (no LLM, pure retrieval)
+
+#### ArXiv Recent and Keyword Alert
+Search arXiv by keyword + category + date window. Returns title, abstract, authors,
+PDF link. **No API key needed.**
+
+```python
+# Example calls from chat:
+# "Find papers on test-time compute scaling from the last 2 weeks"
+# Tool fires: run(query="test-time compute scaling", category="cs.LG", days_back=14)
+```
+
+Best for: monitoring new preprints, staying current in a topic area.
+
+---
+
+#### Semantic Scholar Graph
+Direct access to the S2 Graph API. Flexible endpoint-based interface — call any
+Graph v1 endpoint by name.
+
+```python
+# Search
+run(endpoint="paper/search", params={"query": "attention is all you need", "limit": 5,
+    "fields": "title,abstract,citationCount,openAccessPdf"})
+
+# Get paper by ID
+run(endpoint="paper/2302.13971")
+
+# Get citations for a paper
+run(endpoint="paper/arXiv:1706.03762/citations",
+    params={"fields": "title,authors,year,citationCount", "limit": 20})
+
+# Get references
+run(endpoint="paper/arXiv:2303.08774/references",
+    params={"fields": "title,year,citationCount"})
+
+# Author lookup
+run(endpoint="author/1741101", params={"fields": "name,hIndex,paperCount,papers.title"})
+```
+
+Env var: `SEMANTIC_SCHOLAR_API_KEY` — free at https://www.semanticscholar.org/product/api
+
+---
+
+#### Ai2 Asta MCP Search
+Natural-language semantic search across millions of full-text papers via AI2's
+Asta MCP endpoint. Returns ranked snippets with relevance scores.
+
+```python
+run(query="hybrid dense sparse retrieval with BGE-M3", limit=10, min_score_threshold=0.3)
+```
+
+Env var: `ASTA_TOOL_KEY` — request access at https://allenai.org/
+
+---
+
+#### OpenAlex Academic Search
+250M+ scholarly works; also covers authors, institutions, and funders. Free and open
+with no mandatory key — key only needed for higher rate limits (100 req/s vs 10 req/s).
+
+```python
+# Search works
+run(endpoint="works?search=mixture of experts transformers&per-page=5")
+
+# Get single work
+run(endpoint="works/W2741809807")
+
+# Author profile
+run(endpoint="authors/A5023888391")
+
+# Institution
+run(endpoint="institutions/I4200000001")
+```
+
+Env var: `OPENALEX_API_KEY` (optional) — free at https://openalex.org/
+
+---
+
+#### CORE UK Tool
+200M+ open access papers aggregated from repositories worldwide. Returns direct
+PDF download URLs — excellent for automated ingestion.
+
+```python
+run(query="large language model alignment survey", limit=10)
+```
+
+Env var: `CORE_API_KEY` — free at https://core.ac.uk/services/api
+
+---
+
+#### Connected Papers Graph
+Build a visual similarity graph around any paper. Returns related works, prior
+works (foundational), and derivative works (building on it).
+
+```python
+# By arXiv ID, DOI, or S2 ID
+run(paper_id="2303.08774", action="graph")      # full similarity graph
+run(paper_id="2303.08774", action="prior")      # foundational papers
+run(paper_id="2303.08774", action="derivative") # papers that build on it
+```
+
+Env var: `CONNECTED_PAPERS_API_KEY` — https://www.connectedpapers.com/api
+
+---
+
+#### NCBI PubMed Fetch
+35M+ biomedical papers. Search by keyword or fetch a specific paper by PMID.
+Key is optional but gives 10 req/s vs 3 req/s.
+
+```python
+# Search
+run(term="CRISPR base editing 2024", retmax=10)
+
+# Fetch by PMID
+run(pmid="38001050")
+```
+
+Env var: `NCBI_API_KEY` (optional) — https://www.ncbi.nlm.nih.gov/account/settings/
+
+---
+
+#### Europe PMC OA and Preprint Search
+Strong on European life-sciences literature, grants, and preprints (bioRxiv, medRxiv).
+**No API key needed.** Returns PMC full-text links automatically when available.
+
+```python
+run(query="protein folding AlphaFold", result_type="core", page_size=10)
+run(query="COVID-19 vaccine efficacy", result_type="grant")  # grant search
+```
+
+---
+
+#### Dimensions / Lens Academic Graph
+Covers funding networks, patents, and grants alongside publications. Dimensions
+requires a paid API key; Lens.org has a public rate-limited API.
+
+```python
+run(query="quantum computing error correction", service="lens", limit=10)
+run(query="CRISPR gene editing", service="dimensions")  # returns search URL without key
+```
+
+Env vars: `DIMENSIONS_API_KEY` (paid), `LENS_API_KEY` — https://www.lens.org/lens/user/subscriptions
+
+---
+
+#### Consolidated Academic Paper and Metadata Fetcher
+Single tool that wraps Semantic Scholar, OpenAlex, CORE, Connected Papers, and NCBI.
+Pass `service` + `action` to route to the right backend.
+
+```python
+# S2 paper search
+run(service="semanticscholar", action="search", query="RLHF reward model")
+
+# OpenAlex works
+run(service="openalex", action="search", query="diffusion models image generation")
+
+# CORE full-text
+run(service="core", action="search", query="open access transformer survey")
+
+# S2 citations for a paper
+run(service="semanticscholar", action="citations", identifier="2302.13971")
+
+# S2 references
+run(service="semanticscholar", action="references", identifier="1706.03762")
+```
+
+---
+
+### AI / LLM Research Tools
+
+These route a research question to a frontier LLM and return a synthesised answer.
+Use when you need reasoning over complex topics, not just retrieval.
+
+#### Google Gemini Academic and Multimodal Query
+Gemini 1.5 Pro — strong on math, tables, figures, and recent papers with grounded
+citations. Good for questions involving equations or visual content.
+
+```python
+run(query="Explain the mathematical basis of RLHF with KL divergence regularisation",
+    model="gemini-1.5-pro-latest")
+```
+
+Env var: `GEMINI_API_KEY` — https://aistudio.google.com/app/apikey
+
+---
+
+#### Grok Research and Reasoning Query
+xAI Grok-3 — deep step-by-step reasoning, strong on math, code, and obscure
+cross-disciplinary references.
+
+```python
+run(query="Compare the computational complexity of FlashAttention-2 vs standard attention",
+    model="grok-3")
+```
+
+Env var: `XAI_API_KEY` — https://console.x.ai/
+
+---
+
+#### OpenRouter Research LLM
+Route to any frontier model via a single API key. Default is Claude 3.5 Sonnet.
+Good for comparing model answers or accessing models not in LiteLLM.
+
+```python
+run(query="What is the state of the art in speculative decoding as of 2024?",
+    model="anthropic/claude-3.5-sonnet")
+
+# Try a different model:
+run(query="...", model="google/gemini-pro-1.5")
+run(query="...", model="meta-llama/llama-3.1-405b-instruct")
+```
+
+Env var: `OPENROUTER_API_KEY` — https://openrouter.ai/settings/keys
+
+---
+
+#### Perplexity Academic Q&A
+Returns cited answers with sources filtered to academic domains (arXiv, Semantic
+Scholar, Nature, ScienceDirect, PubMed). Fast and concise.
+
+```python
+run(query="What are the main approaches to long-context LLM inference?",
+    model="sonar-medium-online", max_tokens=1024)
+```
+
+Env var: `PERPLEXITY_API_KEY` — https://www.perplexity.ai/settings/api
+
+---
+
+### Ai2 Extended Tools (Ai2_tools.json)
+
+Four additional Semantic Scholar / Asta tools are available in `Ai2_tools.json`
+but not yet imported into Open WebUI. Import them individually:
+
+| Tool | What it does | Key action |
+|------|-------------|-----------|
+| **Ai2 Semantic Scholar Paper Fetch** | Full metadata for a known paper by ID/DOI/arXiv | `paper_id="2303.08774"` |
+| **Ai2 Semantic Scholar Author Fetch** | Author profile: h-index, paper list, affiliations | `author_id="1741101"` |
+| **Ai2 Semantic Scholar Recommendations** | Similar papers seeded from a known paper | `paper_id=..., limit=10` |
+| **Ai2 Asta MCP Semantic Search** | Full-text semantic search over S2 corpus | Same as Asta MCP above |
+
+All four use `AI2_API_KEY` (set in `env/.env`).
+
+---
+
+### Choosing the Right Tool for the Job
+
+| Task | Best tool(s) |
+|------|-------------|
+| Find recent preprints on a topic | ArXiv Recent & Keyword Alert |
+| Get citation count + PDF for a known paper | Semantic Scholar Graph |
+| Full-text semantic search (natural language) | Ai2 Asta MCP Search |
+| Biomedical / clinical literature | NCBI PubMed + Europe PMC |
+| Funding, grants, patents | Dimensions / Lens |
+| Find all papers similar to a seed paper | Connected Papers Graph |
+| Papers that cite X / are cited by X | Semantic Scholar citations/references |
+| Synthesise complex topic with reasoning | Perplexity → Grok → Gemini |
+| Access a model not in LiteLLM | OpenRouter |
+| Download PDF and add to local corpus | ArXiv alert → `ingest_arxiv_paper` |
+
+---
+
+### Required env vars — quick checklist
+
+Add these to `env/.env` (all optional — tools degrade gracefully without a key):
+
+```env
+# Academic databases
+SEMANTIC_SCHOLAR_API_KEY=    # S2 authenticated: 1 req/s (vs public 100 req/5min)
+ASTA_TOOL_KEY=               # Ai2 Asta MCP full-text search
+OPENALEX_API_KEY=            # OpenAlex high rate limits
+CORE_API_KEY=                # CORE open access papers
+NCBI_API_KEY=                # PubMed (optional, increases rate limit)
+CONNECTED_PAPERS_API_KEY=    # Connected Papers similarity graph
+DIMENSIONS_API_KEY=          # Dimensions.ai (paid)
+LENS_API_KEY=                # Lens.org (rate-limited free tier available)
+AI2_API_KEY=                 # Ai2_tools.json extended S2 tools
+
+# AI reasoning tools
+GEMINI_API_KEY=
+XAI_API_KEY=
+PERPLEXITY_API_KEY=
+OPENROUTER_API_KEY=
+```
+
+---
+
 ## Getting Community Tools
 
 The Open WebUI community maintains a library of pre-built tools:

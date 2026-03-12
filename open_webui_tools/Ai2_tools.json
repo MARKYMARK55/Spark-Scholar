@@ -1,0 +1,100 @@
+[
+  {
+    "id": "ai2_semantic_scholar_paper_fetch",
+    "user_id": "your-user-id",
+    "name": "Ai2 Semantic Scholar Paper Fetch",
+    "meta": {
+      "description": "Fetch detailed metadata for any paper using Semantic Scholar API (Ai2). Returns title, abstract, authors, venue, year, citations, references, open-access PDF link if available."
+    },
+    "access_control": {},
+    "content": "import requests\nimport os\n\nclass Tools:\n    @staticmethod\n    def run(paper_id: str, fields: str = 'title,abstract,authors,venue,year,citationCount,references,citations,openAccessPdf') -> dict:\n        \"\"\"\n        Fetch paper details from Semantic Scholar (Ai2).\n        paper_id: Semantic Scholar ID, DOI, arXiv ID, or SHA (e.g. 649def34f8be52c8b66281af98ae884c09aef38b)\n        fields: comma-separated list of fields to return\n        \"\"\"\n        api_key = os.environ.get('AI2_API_KEY')\n        if not api_key:\n            return {'error': 'AI2_API_KEY not found'}\n\n        url = f'https://api.semanticscholar.org/graph/v1/paper/{paper_id}'\n        params = {'fields': fields}\n        headers = {'x-api-key': api_key}\n\n        try:\n            r = requests.get(url, params=params, headers=headers, timeout=12)\n            r.raise_for_status()\n            data = r.json()\n            if 'openAccessPdf' in data and data['openAccessPdf']:\n                data['pdf_url'] = data['openAccessPdf'].get('url')\n            if 'paperId' in data:\n                data['url'] = f'https://www.semanticscholar.org/paper/{data[\"paperId\"]}'\n            return data\n        except Exception as e:\n            return {'error': str(e)}",
+    "specs": [
+      {
+        "name": "run",
+        "description": "Fetch paper details from Semantic Scholar (Ai2).",
+        "parameters": {
+          "properties": {
+            "paper_id": {"type": "string"},
+            "fields": {"type": "string", "default": "title,abstract,authors,venue,year,citationCount,references,citations,openAccessPdf"}
+          },
+          "required": ["paper_id"],
+          "type": "object"
+        }
+      }
+    ]
+  },
+  {
+    "id": "ai2_semantic_scholar_author_fetch",
+    "user_id": "your-user-id",
+    "name": "Ai2 Semantic Scholar Author Fetch",
+    "meta": {
+      "description": "Fetch author profile from Semantic Scholar (Ai2) including name, affiliation, h-index, and list of papers."
+    },
+    "access_control": {},
+    "content": "import requests\nimport os\n\nclass Tools:\n    @staticmethod\n    def run(author_id: str, fields: str = 'name,affiliations,hIndex,paperCount,citationCount,papers.title,papers.year,papers.venue,papers.citationCount') -> dict:\n        \"\"\"\n        Fetch author details from Semantic Scholar (Ai2).\n        author_id: Semantic Scholar Author ID (e.g. 46314682)\n        fields: comma-separated list of fields\n        \"\"\"\n        api_key = os.environ.get('AI2_API_KEY')\n        if not api_key:\n            return {'error': 'AI2_API_KEY not found'}\n\n        url = f'https://api.semanticscholar.org/graph/v1/author/{author_id}'\n        params = {'fields': fields}\n        headers = {'x-api-key': api_key}\n\n        try:\n            r = requests.get(url, params=params, headers=headers, timeout=12)\n            r.raise_for_status()\n            data = r.json()\n            if 'papers' in data:\n                data['papers'] = sorted(data['papers'], key=lambda x: x.get('year', 0), reverse=True)[:20]\n            return data\n        except Exception as e:\n            return {'error': str(e)}",
+    "specs": [
+      {
+        "name": "run",
+        "description": "Fetch author profile from Semantic Scholar (Ai2).",
+        "parameters": {
+          "properties": {
+            "author_id": {"type": "string"},
+            "fields": {"type": "string", "default": "name,affiliations,hIndex,paperCount,citationCount,papers.title,papers.year,papers.venue,papers.citationCount"}
+          },
+          "required": ["author_id"],
+          "type": "object"
+        }
+      }
+    ]
+  },
+  {
+    "id": "ai2_semantic_scholar_recommendations",
+    "user_id": "your-user-id",
+    "name": "Ai2 Semantic Scholar Recommendations",
+    "meta": {
+      "description": "Get a list of recommended / similar papers for a given seed paper (Semantic Scholar API – Ai2)."
+    },
+    "access_control": {},
+    "content": "import requests\nimport os\n\nclass Tools:\n    @staticmethod\n    def run(paper_id: str, limit: int = 10, fields: str = 'title,abstract,authors,venue,year,citationCount,openAccessPdf') -> dict:\n        \"\"\"\n        Get recommended papers for a seed paper from Semantic Scholar (Ai2).\n        paper_id: any valid paper identifier\n        limit: number of recommendations (default 10)\n        \"\"\"\n        api_key = os.environ.get('AI2_API_KEY')\n        if not api_key:\n            return {'error': 'AI2_API_KEY not found'}\n\n        url = f'https://api.semanticscholar.org/recommendations/v1/papers/forpaper/{paper_id}'\n        params = {'limit': limit, 'fields': fields}\n        headers = {'x-api-key': api_key}\n\n        try:\n            r = requests.get(url, params=params, headers=headers, timeout=12)\n            r.raise_for_status()\n            data = r.json()\n            for p in data.get('recommendedPapers', []):\n                if 'openAccessPdf' in p and p['openAccessPdf']:\n                    p['pdf_url'] = p['openAccessPdf'].get('url')\n                if 'paperId' in p:\n                    p['url'] = f'https://www.semanticscholar.org/paper/{p[\"paperId\"]}'\n            return data\n        except Exception as e:\n            return {'error': str(e)}",
+    "specs": [
+      {
+        "name": "run",
+        "description": "Get recommended papers for a seed paper from Semantic Scholar (Ai2).",
+        "parameters": {
+          "properties": {
+            "paper_id": {"type": "string"},
+            "limit": {"type": "integer", "default": 10},
+            "fields": {"type": "string", "default": "title,abstract,authors,venue,year,citationCount,openAccessPdf"}
+          },
+          "required": ["paper_id"],
+          "type": "object"
+        }
+      }
+    ]
+  },
+  {
+    "id": "ai2_asta_mcp_semantic_search",
+    "user_id": "your-user-id",
+    "name": "Ai2 Asta MCP Semantic Search",
+    "meta": {
+      "description": "Semantic full-text / snippet search across millions of papers via Ai2 Asta MCP endpoint. Returns ranked results with titles, snippets, scores, and links."
+    },
+    "access_control": {},
+    "content": "import requests\nimport os\n\nclass Tools:\n    @staticmethod\n    def run(query: str, limit: int = 10, min_score_threshold: float = 0.25) -> dict:\n        \"\"\"\n        Semantic search on Ai2 Asta MCP corpus.\n        query: natural language or keyword search\n        limit: max results\n        min_score_threshold: minimum relevance score (0-1)\n        \"\"\"\n        api_key = os.environ.get('AI2_API_KEY')\n        if not api_key:\n            return {'error': 'AI2_API_KEY not found'}\n\n        url = 'https://asta-tools.allen.ai/mcp/v1'\n        headers = {\n            'x-api-key': api_key,\n            'Content-Type': 'application/json',\n            'Accept': 'application/json'\n        }\n        payload = {\n            'query': query,\n            'limit': limit,\n            'min_score_threshold': min_score_threshold\n        }\n\n        try:\n            r = requests.post(url, headers=headers, json=payload, timeout=15)\n            r.raise_for_status()\n            data = r.json()\n            for res in data.get('results', []):\n                if 'paperId' in res:\n                    res['url'] = f'https://www.semanticscholar.org/paper/{res[\"paperId\"]}'\n            return data\n        except Exception as e:\n            return {'error': str(e)}",
+    "specs": [
+      {
+        "name": "run",
+        "description": "Semantic search on Ai2 Asta MCP corpus.",
+        "parameters": {
+          "properties": {
+            "query": {"type": "string"},
+            "limit": {"type": "integer", "default": 10},
+            "min_score_threshold": {"type": "number", "default": 0.25}
+          },
+          "required": ["query"],
+          "type": "object"
+        }
+      }
+    ]
+  }
+]
