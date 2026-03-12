@@ -12,12 +12,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Install Python dependencies
-COPY requirements.txt .
+# (build context is repo root; source files live in images/sparse-embedder/)
+COPY images/sparse-embedder/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY sparse_embed.py .
+COPY images/sparse-embedder/sparse_embed.py .
 
 # Pre-download the model to /model cache at build time
 # (set HF_TOKEN as a build arg if the model is gated)

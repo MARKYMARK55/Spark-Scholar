@@ -1,4 +1,4 @@
-# docker/redis.yml
+# core_services/redis.yml
 # =================
 # Valkey cache for the Arxiv RAG pipeline.
 # Valkey is a Redis-compatible open-source fork (Redis 7.x API compatible).
@@ -21,8 +21,8 @@
 #
 # Usage
 # -----
-#   docker compose -f docker/redis.yml up -d
-#   docker compose -f docker/redis.yml down
+#   docker compose -f core_services/redis.yml up -d
+#   docker compose -f core_services/redis.yml down
 #
 # Test:
 #   docker exec redis redis-cli ping          # → PONG

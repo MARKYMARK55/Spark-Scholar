@@ -4,11 +4,6 @@ Production Arxiv RAG stack for DGX Spark — hybrid dense+sparse retrieval, BGE-
 
 **GitHub:** https://github.com/MARKYMARK55/arxiv-rag
 
-**Companion repos:**
-- https://github.com/MARKYMARK55/arxiv-dense-qdrant — dense embedding and indexing pipeline
-- https://github.com/MARKYMARK55/arxiv-sparse-qdrant — sparse embedding and indexing pipeline
-- https://github.com/MARKYMARK55/dgx-spark-rag-stack — full DGX Spark infrastructure stack
-
 ---
 
 ## Architecture
@@ -171,7 +166,7 @@ See `docs/embedding_speed.md` for VRAM allocation and throughput tuning.
 | `RAG_PROXY_PORT` | `8002` | Port for the RAG proxy FastAPI server |
 | `RAG_TOP_K` | `10` | Final retrieved results after reranking |
 | `RAG_RERANK_TOP_N` | `50` | Candidates passed to cross-encoder |
-| `CACHE_TTL_SECONDS` | `3600` | Redis TTL for cached responses |
+| `CACHE_TTL_SECONDS` | `86400` | Redis TTL for cached responses (24 h default for single-user) |
 | `CHUNK_SIZE` | `1000` | PDF chunk size in tokens |
 | `CHUNK_OVERLAP` | `150` | Overlap between consecutive chunks |
 
@@ -224,7 +219,7 @@ docker compose --profile core up -d openwebui searxng langflow
 
 ### Step 5: Langfuse (optional)
 ```bash
-docker compose --profile langfuse up -d
+docker compose -f core_services/langfuse.yml up -d
 ```
 
 ### Step 6: RAG Proxy
@@ -433,7 +428,7 @@ to run alongside the full production stack.
 
 Start them first if not already running:
 ```bash
-bash scripts/start_embedding_stack.sh
+bash scripts/start_stack.sh embedding
 ```
 
 ---
@@ -699,7 +694,7 @@ Langfuse provides end-to-end observability: trace each request through retrieval
 ### Self-hosted (recommended for DGX Spark)
 ```bash
 # Start Langfuse via docker-compose profile
-docker compose --profile langfuse up -d
+docker compose -f core_services/langfuse.yml up -d
 
 # Navigate to http://localhost:3000
 # Create an account, then create a project
@@ -803,7 +798,7 @@ headers = {"Authorization": "Bearer simple-api-key"}
 
 ### How models are registered
 
-Models are defined in `config/litellm_config.yaml`. The three BGE models (dense embedder, reranker) are registered there so Langflow and other tools can call them by name. The main LLM is registered as "local-model" pointing at your vLLM instance.
+Models are defined in `core_services/litellm_config.yaml`. The three BGE models (dense embedder, reranker) are registered there so Langflow and other tools can call them by name. The main LLM is registered as "local-model" pointing at your vLLM instance.
 
 Cloud fallbacks (GPT-4o, Claude) are also defined but only activate if the corresponding API keys are set in env/.env.
 
@@ -959,7 +954,7 @@ arxiv-rag/
 │
 ├── config/
 │   ├── qdrant.yaml                     # Qdrant server config (GPU indexing, HNSW settings)
-│   └── litellm_config.yaml             # LiteLLM model definitions
+│   └── qdrant.yaml                     # Qdrant server config (GPU indexing, HNSW settings)
 │
 ├── docker/
 │   ├── docker-compose.yml              # Full stack with profiles (qdrant/embedding/core/rag-proxy/langfuse)

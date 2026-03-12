@@ -4,7 +4,7 @@
 # Current recommendations (Feb 2026):
 #   • Use built-in dashboard → http://localhost:6333/dashboard
 #   • No separate web-ui container needed anymore
-#   • API key loaded from ../../env/.env (relative to this file)
+#   • API key loaded from ../env/.env (relative to this file)
 # --------------------------------------------------------------
 
 services:

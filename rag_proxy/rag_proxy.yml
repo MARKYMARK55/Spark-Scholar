@@ -1,5 +1,5 @@
-# docker/rag_proxy.yml
-# =====================
+# rag_proxy/rag_proxy.yml
+# ========================
 # ArXiv RAG Proxy — OpenAI-compatible FastAPI proxy.
 #
 # Exposes POST /v1/chat/completions that runs the full hybrid RAG pipeline:
@@ -15,12 +15,12 @@
 # Prerequisites
 # -------------
 # All embedding services + Qdrant + Redis + LiteLLM must be running first.
-# The image is built from api/Dockerfile in the repo root.
+# Image is built from rag_proxy/Dockerfile with repo root as build context.
 #
 # Build + start
 # -------------
-#   docker compose -f docker/rag_proxy.yml build
-#   docker compose -f docker/rag_proxy.yml up -d
+#   docker compose -f rag_proxy/rag_proxy.yml build
+#   docker compose -f rag_proxy/rag_proxy.yml up -d
 #
 # Test
 # ----
@@ -43,7 +43,7 @@ services:
   rag-proxy:
     build:
       context: ..
-      dockerfile: api/Dockerfile
+      dockerfile: rag_proxy/Dockerfile
     image: arxiv-rag-proxy:latest
     container_name: rag-proxy
     restart: unless-stopped

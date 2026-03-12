@@ -9,7 +9,7 @@
 #   Indexing   : gpu-memory-utilization=0.50, max-num-seqs=64  → ~1,100 docs/s
 #
 # The sparse embedder and reranker are unaffected — they continue running.
-# The inference model (vLLM on port 8000) is also unaffected.
+# The SparkRun inference model on port 8000 is also unaffected.
 #
 # After bulk indexing completes, run: ./scripts/stop_indexing_mode.sh
 # ──────────────────────────────────────────────────────────────────────────────
@@ -17,17 +17,16 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DOCKER_DIR="$REPO_ROOT/docker"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  Switching to INDEXING MODE (50% GPU, high throughput)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 echo "→ Stopping production dense embedder (port 8025)..."
-docker compose -f "$DOCKER_DIR/bge_m3_dense_embedder.yml" down 2>/dev/null || true
+docker compose -f "$REPO_ROOT/embedding/bge_m3_dense.yml" down 2>/dev/null || true
 
 echo "→ Starting indexing dense embedder (port 8026, 50% GPU)..."
-docker compose -f "$DOCKER_DIR/bge_m3_dense_embedder_indexing.yml" up -d
+docker compose -f "$REPO_ROOT/embedding/bge_m3_dense_indexing.yml" up -d
 
 echo "  Waiting for indexing embedder..."
 for i in $(seq 1 30); do
@@ -40,7 +39,7 @@ done
 
 echo ""
 echo "  Now run your indexing pipeline:"
-echo "    python ingest/03_ingest_dense.py --input data/arxiv-metadata.jsonl \\"
+echo "    python ingest/03_ingest_dense.py --input data/arxiv_with_abstract.jsonl \\"
 echo "        --batch-size 256 --embedder-url http://localhost:8026"
 echo ""
 echo "  When done: ./scripts/stop_indexing_mode.sh"

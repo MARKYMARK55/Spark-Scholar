@@ -1,0 +1,65 @@
+# embedding/bge_m3_sparse.yml
+# ============================
+# BGE-M3 Sparse Embedder — SPLADE-style sparse vectors for Qdrant hybrid search.
+#
+# Custom image built from images/sparse-embedder/Dockerfile.
+# Runs FlagEmbedding on GPU, exposes a FastAPI endpoint on port 8035.
+#
+# Build + start
+# -------------
+#   docker compose -f embedding/bge_m3_sparse.yml build
+#   docker compose -f embedding/bge_m3_sparse.yml up -d
+#
+# Test
+# ----
+#   curl http://localhost:8035/health
+#   curl -X POST http://localhost:8035/embed \
+#     -H "Content-Type: application/json" \
+#     -d '{"texts": ["What is RLHF?"]}'
+
+name: arxiv-bge-m3-sparse
+
+networks:
+  llm-net:
+    external: true
+    name: llm-net
+
+services:
+
+  bge-m3-sparse-embedder:
+    container_name: bge-m3-sparse-embedder
+    build:
+      context: ..
+      dockerfile: images/sparse-embedder/Dockerfile
+    image: bge-m3-sparse-embedder:latest
+    restart: unless-stopped
+    runtime: nvidia
+    networks:
+      - llm-net
+    ports:
+      - "8035:8035"
+    environment:
+      BGE_M3_MODEL: "BAAI/bge-m3"
+      SPARSE_EMBED_HOST: "0.0.0.0"
+      SPARSE_EMBED_PORT: "8035"
+      CUDA_VISIBLE_DEVICES: "0"
+      PYTHONUNBUFFERED: "1"
+      FORCE_FP16: "1"
+    volumes:
+      - ~/.cache/huggingface:/opt/hf_home
+    shm_size: 8g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8035/health || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 120s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+        limits:
+          memory: 8g

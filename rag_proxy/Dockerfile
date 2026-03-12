@@ -15,7 +15,8 @@ RUN useradd -m -u 1000 appuser
 WORKDIR /app
 
 # Copy requirements first for layer caching
-COPY requirements.txt .
+# (build context is repo root; requirements.txt lives in rag_proxy/)
+COPY rag_proxy/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
@@ -34,4 +35,4 @@ EXPOSE 8002
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8002/health || exit 1
 
-CMD ["uvicorn", "api.rag_proxy:app", "--host", "0.0.0.0", "--port", "8002", "--workers", "1", "--log-level", "info"]
+CMD ["uvicorn", "rag_proxy.rag_proxy:app", "--host", "0.0.0.0", "--port", "8002", "--workers", "1", "--log-level", "info"]

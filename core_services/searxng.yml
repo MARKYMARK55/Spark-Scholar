@@ -1,4 +1,4 @@
-# docker/searxng.yml
+# core_services/searxng.yml
 # ===================
 # SearXNG — private meta-search engine for web search fallback.
 #
@@ -16,12 +16,12 @@
 # To customise enabled engines / UI settings, edit the file inside the container:
 #   docker exec -it searxng sh
 #   vi /etc/searxng/settings.yml
-# Then restart: docker compose -f docker/searxng.yml restart
+# Then restart: docker compose -f core_services/searxng.yml restart
 #
 # Usage
 # -----
-#   docker compose -f docker/searxng.yml up -d
-#   docker compose -f docker/searxng.yml down
+#   docker compose -f core_services/searxng.yml up -d
+#   docker compose -f core_services/searxng.yml down
 
 name: arxiv-searxng
 

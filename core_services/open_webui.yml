@@ -72,7 +72,7 @@ services:
       ENABLE_WEB_SEARCH: "true"
       ENABLE_SEARCH_QUERY_GENERATION: "false"
       WEB_SEARCH_ENGINE: "searxng"
-      SEARXNG_URL: "http://searxng:8888"
+      SEARXNG_URL: "http://searxng:8080"
       WEB_SEARCH_RESULT_COUNT: "20"
       WEB_SEARCH_CONCURRENT_REQUESTS: "5"
       # Bypass Open WebUI's internal embedding of web results —

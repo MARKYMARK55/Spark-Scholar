@@ -1,4 +1,4 @@
-# start_bge-m3_embedder.yml
+# embedding/bge_m3_dense.yml
 # Run BAAI/bge-m3 as OpenAI-compatible embeddings server with vLLM
 # Port 8026 on host → 8000 inside container
 # Designed to coexist with your Qwen3-Embedding (8025) and reranker (8020)
@@ -7,11 +7,11 @@ services:
   bge-m3-embedder:
     #image: nvcr.io/nvidia/vllm:26.01-py3   
     image: nvcr.io/nvidia/vllm:25.12-py3      # or 25.12.post1-py3   # same recent tag as your Qwen3 embedder
-    container_name: bge-m3-embedder
+    container_name: bge-m3-dense-embedder
     restart: unless-stopped
     runtime: nvidia
     ports:
-      - "8026:8000"                           # different host port to avoid conflict
+      - "8025:8000"                           # different host port to avoid conflict
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
       # optional: pre-downloaded model (recommended for faster startup)
@@ -33,7 +33,7 @@ services:
       - "--max-model-len"
       - "4096"                                # ← changed from 8192 (or try 2048)
       - "--gpu-memory-utilization"
-      - "0.50"
+      - "0.12"
       - "--max-num-seqs"
       - "8"
       - "--max-num-batched-tokens"
@@ -41,7 +41,7 @@ services:
       - "--enable-prefix-caching"
       - "--trust-remote-code"
       - "--served-model-name"
-      - "bge-m3-embedder-indexing"
+      - "bge-m3-embedder"
       - "--api-key"
       - "simple-api-key"
       - "--disable-log-requests"

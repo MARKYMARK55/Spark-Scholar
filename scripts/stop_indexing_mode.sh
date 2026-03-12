@@ -4,13 +4,12 @@
 
 set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DOCKER_DIR="$REPO_ROOT/docker"
 
 echo "→ Stopping indexing embedder (port 8026)..."
-docker compose -f "$DOCKER_DIR/bge_m3_dense_embedder_indexing.yml" down 2>/dev/null || true
+docker compose -f "$REPO_ROOT/embedding/bge_m3_dense_indexing.yml" down 2>/dev/null || true
 
 echo "→ Starting production dense embedder (port 8025, 12% GPU)..."
-docker compose -f "$DOCKER_DIR/bge_m3_dense_embedder.yml" up -d
+docker compose -f "$REPO_ROOT/embedding/bge_m3_dense.yml" up -d
 
 for i in $(seq 1 20); do
   if curl -sf http://localhost:8025/health > /dev/null 2>&1; then

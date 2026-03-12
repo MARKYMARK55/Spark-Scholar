@@ -1,18 +1,19 @@
-# docker/core_services.yml
-# =========================
+# core_services/core_services.yml
+# =================================
 # Core services: LiteLLM proxy, Open WebUI, Langflow.
-# Redis, SearXNG, and Langfuse have their own standalone YML files.
+# Redis, SearXNG, and Langfuse have their own YML files in this directory.
 #
 # Prerequisites
 # -------------
 # - llm-net Docker network must exist:  docker network create llm-net
-# - env/.env must be configured (copy from .env.example)
-# - Your vLLM inference server must be running (host.docker.internal:8000)
+# - env/.env must be configured (copy from .env.example, see env/README.md)
+# - SparkRun must have the inference model running on port 8000
+#   See: github.com/scitrera/oss-spark-run
 #
 # Usage
 # -----
-#   docker compose -f docker/core_services.yml up -d
-#   docker compose -f docker/core_services.yml logs -f litellm
+#   docker compose -f core_services/core_services.yml up -d
+#   docker compose -f core_services/core_services.yml logs -f litellm
 #
 # Port map
 # --------
@@ -72,7 +73,7 @@ services:
     ports:
       - "4000:4000"
     volumes:
-      - ../config/litellm_config.yaml:/app/config.yaml:ro
+      - ./litellm_config.yaml:/app/config.yaml:ro
       - ~/.cache/huggingface:/root/.cache/huggingface:ro
     env_file:
       - ../env/.env
@@ -123,7 +124,7 @@ services:
       ENABLE_WEB_SEARCH: "true"
       ENABLE_SEARCH_QUERY_GENERATION: "false"
       WEB_SEARCH_ENGINE: "searxng"
-      SEARXNG_URL: "http://searxng:8888"
+      SEARXNG_URL: "http://searxng:8080"
       WEB_SEARCH_RESULT_COUNT: "20"
       WEB_SEARCH_CONCURRENT_REQUESTS: "5"
       BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: "true"

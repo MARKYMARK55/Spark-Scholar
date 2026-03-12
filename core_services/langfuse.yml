@@ -1,4 +1,4 @@
-# docker/langfuse.yml
+# core_services/langfuse.yml
 # ====================
 # Langfuse — self-hosted LLM observability and tracing.
 #
@@ -8,7 +8,7 @@
 # Setup
 # -----
 # 1. Start services:
-#      docker compose -f docker/langfuse.yml up -d
+#      docker compose -f core_services/langfuse.yml up -d
 # 2. Open http://localhost:3000 and create an account
 # 3. Create a project → Settings → API Keys
 # 4. Copy secret + public keys into env/.env:
@@ -19,8 +19,8 @@
 #
 # Usage
 # -----
-#   docker compose -f docker/langfuse.yml up -d
-#   docker compose -f docker/langfuse.yml down
+#   docker compose -f core_services/langfuse.yml up -d
+#   docker compose -f core_services/langfuse.yml down
 #
 # Data
 # ----
