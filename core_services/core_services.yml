@@ -196,7 +196,16 @@ services:
 
   # ── Langflow ─────────────────────────────────────────────────────────────
   # Visual pipeline builder. Points at LiteLLM local by default.
-  # For cloud models, update OPENAI_API_BASE to http://litellm-cloud:4001/v1.
+  #
+  # Custom components (langflow/components/) include:
+  #   - language_model_litellm.py — LiteLLM provider with live model list fetch,
+  #     supports LiteLLM (Local), OpenAI, Anthropic, Gemini, IBM watsonx, Ollama.
+  #     Mounts to /app/custom_components inside the container.
+  #
+  # Flows + data persist in the named volume spark_scholar_langflow_data.
+  # To use an existing flows dir instead:
+  #   Replace langflow_data:/app/data with:
+  #   - /home/mark/vllm/model_stack/langflow/data:/app/data
   langflow:
     image: langflowai/langflow:latest
     container_name: langflow
@@ -206,19 +215,22 @@ services:
     ports:
       - "7860:7860"
     volumes:
-      - langflow_data:/app/langflow
+      - langflow_data:/app/data
+      - ../langflow/components:/app/custom_components:ro
     env_file:
       - ../env/.env
     environment:
       LANGFLOW_HOST: "0.0.0.0"
       LANGFLOW_PORT: "7860"
       LANGFLOW_WORKERS: "2"
+      LANGFLOW_COMPONENTS_PATH: "/app/custom_components"
       OPENAI_API_KEY: "simple-api-key"
       OPENAI_API_BASE: "http://litellm:4000/v1"
     command: >
       langflow run
       --host 0.0.0.0
       --port 7860
+      --components-path /app/custom_components
     depends_on:
       litellm:
         condition: service_healthy

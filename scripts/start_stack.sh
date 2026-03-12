@@ -10,13 +10,28 @@
 #   ./scripts/start_stack.sh core         # core services only (needs embedding running)
 #
 # Prerequisites:
-#   1. SparkRun must have the inference model (LLM) running on port 8000.
-#      SparkRun: github.com/scitrera/oss-spark-run
-#      e.g.  sparkrun start qwen3-30b-a3b   (or whichever model you have loaded)
+#   1. SparkRun must have the inference model (LLM) running.
+#      github.com/scitrera/sparkrun  |  spark-arena.com
+#
+#      Install:  uvx sparkrun setup install
+#      Run:      sparkrun run <recipe>
+#      Examples:
+#        sparkrun run qwen3-30b-a3b
+#        sparkrun run nemotron-nano-30b
+#        sparkrun run @spark-arena/<recipe-id>
+#
+#      Check status:  sparkrun status
+#      Attach logs:   sparkrun logs <recipe>
+#      Stop model:    sparkrun stop <recipe>
+#
+#      SparkRun auto-configures LiteLLM with the running model (aliases,
+#      dynamic updates). For manual alias registration without restart:
+#        source scripts/litellm_register.sh
+#        litellm_register nemotron   # or: qwen3-80b | qwen3-coder | glm
 #
 #   2. Docker llm-net network:  docker network create llm-net   (once only)
 #
-#   3. env/.env filled in:  cp .env.example env/.env  (see env/README.md)
+#   3. env/.env filled in:  cp .env.example env/.env
 #
 # Inference model is managed entirely by SparkRun — do NOT try to docker-compose it.
 # ──────────────────────────────────────────────────────────────────────────────
@@ -36,6 +51,33 @@ if ! docker network ls | grep -q llm-net; then
 fi
 
 MODE="${1:-full}"
+
+# ── Check SparkRun inference model is running ─────────────────────────────────
+if [[ "$MODE" == "full" || "$MODE" == "core" ]]; then
+  echo "→ Checking SparkRun inference model (port 8000)..."
+  if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
+    MODEL_ID=$(curl -s http://localhost:8000/v1/models \
+      -H "Authorization: Bearer simple-api-key" \
+      | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['data'][0]['id'] if d.get('data') else 'unknown')" 2>/dev/null)
+    echo "  ✓ SparkRun inference ready — model: ${MODEL_ID}"
+  else
+    echo ""
+    echo "  ⚠ WARNING: No inference model detected on port 8000."
+    echo "  Start one with SparkRun before using Open WebUI or the RAG proxy:"
+    echo ""
+    echo "    sparkrun run <recipe>"
+    echo "    e.g.  sparkrun run qwen3-30b-a3b"
+    echo "          sparkrun run nemotron-nano-30b"
+    echo ""
+    echo "  Check available recipes:  sparkrun list"
+    echo "  Check status:             sparkrun status"
+    echo ""
+    echo "  Continuing startup — LiteLLM and Open WebUI will start but queries"
+    echo "  will fail until a model is running. Use 'sparkrun run <recipe>',"
+    echo "  then register it:  source scripts/litellm_register.sh && litellm_register <group>"
+    echo ""
+  fi
+fi
 
 # ── Stop existing containers cleanly ──────────────────────────────────────────
 if [[ "$MODE" == "full" ]]; then
@@ -124,6 +166,15 @@ if [[ "$MODE" == "full" || "$MODE" == "core" ]]; then
     ATTEMPT=$((ATTEMPT + 1))
   done
   echo "  ✓ LiteLLM ready"
+
+  echo "  Waiting for Langflow (first run downloads image — allow 2 min)..."
+  for i in $(seq 1 24); do
+    if curl -sf http://localhost:7860/health > /dev/null 2>&1; then
+      echo "  ✓ Langflow ready on port 7860"
+      break
+    fi
+    sleep 5
+  done
 fi
 
 # ── Stage 4: RAG Proxy ────────────────────────────────────────────────────────
@@ -154,8 +205,14 @@ echo "  Langflow            → http://localhost:7860"
 echo "  SearXNG             → http://localhost:8888"
 echo "  Langfuse            → (optional: docker compose -f core_services/langfuse.yml up -d)"
 echo ""
-echo "  Inference model     → managed by SparkRun on port 8000"
-echo "                        github.com/scitrera/oss-spark-run"
+echo "  Inference model     → managed by SparkRun (github.com/scitrera/sparkrun)"
+echo "                        sparkrun run <recipe>   e.g. qwen3-30b-a3b"
+echo "                        sparkrun status         check what's running"
+echo "                        sparkrun list           browse recipes"
+echo "                        sparkrun stop <recipe>  stop a model"
+echo ""
+echo "  Model aliases       → source scripts/litellm_register.sh"
+echo "                        litellm_register <group>   (nemotron|qwen3-80b|...)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Show available models via LiteLLM

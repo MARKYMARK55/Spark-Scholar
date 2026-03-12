@@ -8,6 +8,23 @@
 #
 # Start with:  docker compose -f core_services/core_services.yml up -d litellm
 # Logs:        docker compose -f core_services/core_services.yml logs -f litellm
+#
+# ── SparkRun ↔ LiteLLM Auto-Config (NEW) ────────────────────────────────────
+# SparkRun now includes built-in LiteLLM proxy integration that automatically
+# configures LiteLLM with whichever model SparkRun is currently running —
+# including model aliases, dynamic config updates, and fallback chains.
+#
+# This means you may not need to edit this file at all when switching models.
+# SparkRun detects the running model and registers it in LiteLLM automatically.
+#
+# For manual dynamic registration (without restarting LiteLLM), use:
+#   source scripts/litellm_register.sh
+#   litellm_register nemotron        # registers all Nemotron-* aliases
+#   litellm_register qwen3-80b       # registers Qwen3-80B-* aliases
+#   litellm_deregister nemotron      # removes them cleanly
+#
+# See scripts/litellm_register.sh for all supported model groups.
+# ─────────────────────────────────────────────────────────────────────────────
 
 general_settings:
   master_key: "os.environ/LITELLM_MASTER_KEY"
@@ -78,6 +95,102 @@ model_list:
       model: "openai/phi-mini"
       api_base: "os.environ/VLLM_PHI_URL"
       api_key:  "os.environ/VLLM_API_KEY"
+
+  # ── Named presets for the primary model ──────────────────────────────────
+  # These give the same underlying model different personalities / budgets.
+  # Useful in Open WebUI for quick switching — pick "Nemotron-Code" for dev,
+  # "Nemotron-Max" for deep research, "Nemotron-Fast" for quick answers.
+  #
+  # HOW: These all point to VLLM_URL (port 8000). The model name passed to vLLM
+  # must match what SparkRun loaded. Thinking budget parameters are forwarded
+  # as extra_body and honoured by Nemotron / Qwen3 thinking models.
+  # If your model doesn't support thinking_budget, remove those lines.
+  #
+  # For dynamic registration without restart, use:
+  #   source scripts/litellm_register.sh && litellm_register nemotron
+  #
+  - model_name: Fast
+    litellm_params:
+      model: "openai/local-model"
+      api_base: "os.environ/VLLM_URL"
+      api_key:  "os.environ/VLLM_API_KEY"
+      temperature: 0.55
+      top_p: 0.98
+      max_tokens: 32768
+      stream_timeout: 120
+      timeout: 120
+    model_info:
+      description: "Primary model — fast, low thinking budget, conversational"
+
+  - model_name: Expert
+    litellm_params:
+      model: "openai/local-model"
+      api_base: "os.environ/VLLM_URL"
+      api_key:  "os.environ/VLLM_API_KEY"
+      temperature: 0.55
+      top_p: 0.98
+      max_tokens: 32768
+      thinking_budget: 4096
+      stream_timeout: 400
+      timeout: 400
+    model_info:
+      description: "Primary model — extended thinking (4K budget), research tasks"
+
+  - model_name: Heavy
+    litellm_params:
+      model: "openai/local-model"
+      api_base: "os.environ/VLLM_URL"
+      api_key:  "os.environ/VLLM_API_KEY"
+      temperature: 0.55
+      top_p: 0.98
+      max_tokens: 32768
+      thinking_budget: 16384
+      stream_timeout: 600
+      timeout: 600
+    model_info:
+      description: "Primary model — deep thinking (16K budget), complex reasoning"
+
+  - model_name: Max
+    litellm_params:
+      model: "openai/local-model"
+      api_base: "os.environ/VLLM_URL"
+      api_key:  "os.environ/VLLM_API_KEY"
+      temperature: 0.55
+      top_p: 0.98
+      max_tokens: 32768
+      thinking_budget: 32768
+      stream_timeout: 600
+      timeout: 600
+    model_info:
+      description: "Primary model — maximum thinking budget, hardest problems"
+
+  - model_name: Code
+    litellm_params:
+      model: "openai/local-model"
+      api_base: "os.environ/VLLM_URL"
+      api_key:  "os.environ/VLLM_API_KEY"
+      temperature: 0.10
+      top_p: 0.95
+      max_tokens: 16384
+      thinking_budget: 4096
+      stream_timeout: 300
+      timeout: 300
+    model_info:
+      description: "Primary model — low temperature, code generation and debugging"
+
+  - model_name: Creative
+    litellm_params:
+      model: "openai/local-model"
+      api_base: "os.environ/VLLM_URL"
+      api_key:  "os.environ/VLLM_API_KEY"
+      temperature: 0.85
+      top_p: 0.98
+      max_tokens: 32768
+      thinking_budget: 2048
+      stream_timeout: 400
+      timeout: 400
+    model_info:
+      description: "Primary model — high temperature, writing and brainstorming"
 
   # ── BGE-M3 Dense Embedder (vLLM, port 8025) ──────────────────────────────
   - model_name: bge-m3-embedder
