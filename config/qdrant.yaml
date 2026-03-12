@@ -1,0 +1,71 @@
+# qdrant.yaml
+# ===========
+# Qdrant server configuration for the arXiv RAG stack on DGX Spark.
+# Mount this file at /qdrant/config/production.yaml inside the container.
+#
+# Reference: https://qdrant.tech/documentation/guides/configuration/
+
+# Storage backend
+storage:
+  # Where to store collections on disk
+  storage_path: /qdrant/storage
+  # Snapshots directory
+  snapshots_path: /qdrant/snapshots
+  # Temp files for operations
+  temp_path: /qdrant/tmp
+  # Mmap on_disk vectors threshold
+  on_disk_payload: true
+  # Wal (write-ahead log) settings
+  wal:
+    wal_capacity_mb: 32
+    wal_segments_ahead: 0
+
+# HNSW index defaults (can be overridden per collection)
+hnsw_index:
+  m: 16
+  ef_construct: 100
+  full_scan_threshold: 10000
+  max_indexing_threads: 0  # 0 = use all CPU cores
+  on_disk: false           # keep HNSW graph in RAM for fast search
+  payload_m: null
+
+# Optimizer settings
+optimizer:
+  # Minimum vector count before HNSW indexing begins
+  indexing_threshold: 20000
+  # Flush to disk when segment reaches this size
+  flush_interval_sec: 5
+  # Max RAM for optimizer (0 = 20% of total RAM)
+  max_optimization_threads: 2
+  # Memmap threshold
+  memmap_threshold: 50000
+  # Default segment count
+  default_segment_number: 4
+  # Max segment size
+  max_segment_size: null
+  # Vacuum threshold
+  vacuum_min_vector_number: 1000
+
+# Service settings
+service:
+  host: 0.0.0.0
+  http_port: 6333
+  grpc_port: 6334
+  # Max message size for gRPC (bytes) — increase for large batch upserts
+  max_request_size_mb: 32
+  # Number of gRPC workers
+  grpc_workers: null
+  # Timeout
+  enable_cors: true
+  # JWT auth — set api_key in docker-compose or via env
+  # api_key: ""  # Set via QDRANT__SERVICE__API_KEY environment variable
+
+# Cluster settings (single-node setup)
+cluster:
+  enabled: false
+
+# Telemetry (disable for air-gapped deployments)
+telemetry_disabled: false
+
+# Logging
+log_level: INFO

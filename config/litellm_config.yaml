@@ -1,0 +1,139 @@
+# litellm_config.yaml
+# ====================
+# LiteLLM proxy configuration for the arXiv RAG stack.
+#
+# This file is mounted at /app/config.yaml inside the LiteLLM container.
+# LiteLLM provides a unified OpenAI-compatible API in front of all models.
+#
+# Start LiteLLM with:
+#   litellm --config /app/config.yaml --port 4000
+#
+# Reference: https://docs.litellm.ai/docs/proxy/configs
+
+# ============================================================
+# General settings
+# ============================================================
+general_settings:
+  master_key: "os.environ/LITELLM_MASTER_KEY"
+  database_url: "os.environ/LITELLM_DATABASE_URL"
+  store_model_in_db: true
+  # Allow all models for all keys (disable per-model ACLs in dev)
+  allow_requests_on_db_unavailable: true
+
+# ============================================================
+# Model list
+# ============================================================
+model_list:
+
+  # ----------------------------------------------------------
+  # Primary LLM: local vLLM instance (Nemotron or Qwen3)
+  # ----------------------------------------------------------
+  - model_name: local-model
+    litellm_params:
+      model: openai/local-model
+      api_base: "os.environ/VLLM_URL"
+      api_key: "os.environ/VLLM_API_KEY"
+      stream_timeout: 300
+      timeout: 300
+    model_info:
+      description: "Primary LLM (Nemotron-H or Qwen3) served by local vLLM"
+
+  # Alias: users can also call "vllm" or use the actual model name
+  - model_name: vllm
+    litellm_params:
+      model: openai/local-model
+      api_base: "os.environ/VLLM_URL"
+      api_key: "os.environ/VLLM_API_KEY"
+
+  # ----------------------------------------------------------
+  # BGE-M3 Dense Embedder
+  # ----------------------------------------------------------
+  - model_name: bge-m3-embedder
+    litellm_params:
+      model: openai/bge-m3-embedder
+      api_base: "os.environ/BGE_M3_DENSE_URL"
+      api_key: "os.environ/BGE_M3_API_KEY"
+    model_info:
+      mode: embedding
+      description: "BGE-M3 dense embedder via vLLM (1024-dim, port 8025)"
+
+  # ----------------------------------------------------------
+  # BGE Reranker
+  # ----------------------------------------------------------
+  - model_name: bge-reranker-v2-m3
+    litellm_params:
+      model: openai/bge-reranker-v2-m3
+      api_base: "os.environ/BGE_RERANKER_URL"
+      api_key: "os.environ/BGE_M3_API_KEY"
+    model_info:
+      mode: rerank
+      description: "BGE-M3 cross-encoder reranker via vLLM (port 8020)"
+
+  # ----------------------------------------------------------
+  # Cloud fallback: OpenAI GPT-4o (only active if OPENAI_API_KEY is set)
+  # ----------------------------------------------------------
+  - model_name: gpt-4o
+    litellm_params:
+      model: gpt-4o
+      api_key: "os.environ/OPENAI_API_KEY_CLOUD"
+    model_info:
+      description: "OpenAI GPT-4o (cloud fallback, requires OPENAI_API_KEY_CLOUD)"
+
+  # ----------------------------------------------------------
+  # Cloud fallback: Anthropic Claude (only active if ANTHROPIC_API_KEY is set)
+  # ----------------------------------------------------------
+  - model_name: claude-3-5-sonnet
+    litellm_params:
+      model: anthropic/claude-3-5-sonnet-20241022
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+    model_info:
+      description: "Anthropic Claude 3.5 Sonnet (cloud fallback)"
+
+# ============================================================
+# Router settings
+# ============================================================
+router_settings:
+  # Retry failed requests with exponential backoff
+  num_retries: 3
+  retry_after: 5
+  # Allow falling back to other models on failure
+  allowed_fails: 2
+  # Load balancing strategy
+  routing_strategy: "simple-shuffle"
+  # Timeout per request
+  request_timeout: 300
+  # Enable caching of LiteLLM router state
+  redis_host: "localhost"
+  redis_port: 6379
+  cache_responses: false  # We handle caching in the RAG proxy
+
+# ============================================================
+# Litellm settings
+# ============================================================
+litellm_settings:
+  # Drop unsupported params instead of failing
+  drop_params: true
+  # Set custom logger
+  success_callback: []
+  failure_callback: []
+  # Logging
+  set_verbose: false
+  json_logs: true
+  # Request/response logging to stdout (disable in production for perf)
+  log_level: "INFO"
+  # Dynamic API key from env
+  success_callback: []
+
+# ============================================================
+# Environment variable aliases
+# (LiteLLM reads these from the container's environment)
+# ============================================================
+# LITELLM_MASTER_KEY     — master key for admin operations
+# LITELLM_DATABASE_URL   — PostgreSQL URL for persistent storage
+# VLLM_URL               — http://vllm:8000
+# VLLM_API_KEY           — simple-api-key
+# BGE_M3_DENSE_URL       — http://bge-m3-dense-embedder:8025
+# BGE_M3_API_KEY         — simple-api-key
+# BGE_RERANKER_URL       — http://bge-m3-reranker:8020
+# OPENAI_API_KEY_CLOUD   — sk-... (optional, for cloud fallback)
+# ANTHROPIC_API_KEY      — sk-ant-... (optional, for cloud fallback)
