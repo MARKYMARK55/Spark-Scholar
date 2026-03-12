@@ -74,12 +74,7 @@ coverage.xml
 *.pth
 *.safetensors
 data/
-models/
 checkpoints/
-
-# Exception: Langflow custom components (Python source — not model weights)
-!langflow/components/
-!langflow/components/**
 
 # Logs
 *.log
