@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # scripts/start_stack.sh
 # ──────────────────────────────────────────────────────────────────────────────
-# Full stack startup for arxiv-rag on DGX Spark.
+# Full stack startup for spark-scholar on DGX Spark.
 # Starts all services in dependency order with health checks between stages.
 #
 # Usage:
@@ -26,7 +26,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "         arxiv-rag Stack Startup"
+echo "         Spark Scholar Stack Startup"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ── Ensure llm-net exists ──────────────────────────────────────────────────────

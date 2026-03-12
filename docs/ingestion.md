@@ -444,7 +444,7 @@ From Open WebUI (Path B — RAG proxy connection), pass collection filters:
 
 ```json
 {
-    "model": "arxiv-rag",
+    "model": "spark-scholar",
     "messages": [{"role": "user", "content": "How do I use async/await in Rust?"}],
     "collections": ["docs-rust", "arxiv-cs-ml-ai"]
 }

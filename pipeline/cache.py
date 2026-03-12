@@ -27,7 +27,7 @@ REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
 DEFAULT_TTL = int(os.environ.get("CACHE_TTL_SECONDS", "3600"))
 
 # Namespace prefix for all RAG cache keys so we don't collide with other apps
-KEY_PREFIX = "arxiv_rag:"
+KEY_PREFIX = "spark_scholar:"
 
 
 class ResultCache:
@@ -191,7 +191,7 @@ class ResultCache:
             return False
 
     def flush_namespace(self) -> int:
-        """Delete all keys in the arxiv_rag namespace. Returns count deleted."""
+        """Delete all keys in the spark_scholar namespace. Returns count deleted."""
         if self._client is None:
             return 0
         try:
@@ -271,5 +271,5 @@ if __name__ == "__main__":
 
     print(f"Match: {retrieved == test_value}")
 
-    miss = cache.get("arxiv_rag:nonexistent_key_abc123")
+    miss = cache.get("spark_scholar:nonexistent_key_abc123")
     print(f"Miss result: {miss}")

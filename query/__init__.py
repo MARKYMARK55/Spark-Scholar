@@ -1,7 +1,7 @@
 """
 query/
 ======
-Command-line search tools for the Arxiv RAG stack.
+Command-line search tools for the Spark Scholar stack.
 
 All three scripts call the running embedding **services** — they do NOT load
 any model locally — so they are safe to run alongside the production stack.

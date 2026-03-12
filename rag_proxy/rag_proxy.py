@@ -17,7 +17,7 @@ Usage
 uvicorn api.rag_proxy:app --host 0.0.0.0 --port 8002 --workers 1
 
 # Or via Docker (see api/Dockerfile):
-docker run -p 8002:8002 --env-file env/.env arxiv-rag-proxy
+docker run -p 8002:8002 --env-file env/.env spark-scholar-proxy
 """
 
 from __future__ import annotations
@@ -79,7 +79,7 @@ class ModelInfo(BaseModel):
     id: str
     object: str = "model"
     created: int = 0
-    owned_by: str = "arxiv-rag"
+    owned_by: str = "spark-scholar"
 
 
 class ModelsResponse(BaseModel):
@@ -94,16 +94,16 @@ class ModelsResponse(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Warm up the cache connection and log startup."""
-    logger.info("arxiv-rag proxy starting up")
+    logger.info("spark-scholar proxy starting up")
     cache = get_cache()
     logger.info("Redis available: %s", cache.is_available())
     yield
-    logger.info("arxiv-rag proxy shutting down")
+    logger.info("spark-scholar proxy shutting down")
     cache.flush_namespace()
 
 
 app = FastAPI(
-    title="Arxiv RAG Proxy",
+    title="Spark Scholar Proxy",
     description="OpenAI-compatible proxy with arXiv retrieval-augmented generation",
     version="1.0.0",
     lifespan=lifespan,
@@ -257,7 +257,7 @@ async def _stream_rag_response(
 
 @app.get("/")
 async def root():
-    return {"message": "Arxiv RAG Proxy", "docs": "/docs", "health": "/health"}
+    return {"message": "Spark Scholar Proxy", "docs": "/docs", "health": "/health"}
 
 
 @app.get("/health")
@@ -278,7 +278,7 @@ async def list_models():
     Open WebUI uses this to populate the model dropdown.
     """
     models = [
-        ModelInfo(id="arxiv-rag", owned_by="arxiv-rag"),
+        ModelInfo(id="spark-scholar", owned_by="spark-scholar"),
         ModelInfo(id=VLLM_MODEL, owned_by="vllm"),
     ]
     return ModelsResponse(data=models)
@@ -415,7 +415,7 @@ if __name__ == "__main__":
     host = os.environ.get("RAG_PROXY_HOST", "0.0.0.0")
     port = RAG_PROXY_PORT
 
-    logger.info("Starting arxiv-rag proxy on %s:%d", host, port)
+    logger.info("Starting spark-scholar proxy on %s:%d", host, port)
     uvicorn.run(
         "api.rag_proxy:app",
         host=host,

@@ -584,7 +584,7 @@ def ingest_pdfs(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Ingest PDF files into the Arxiv RAG vector database"
+        description="Ingest PDF files into the Spark Scholar vector database"
     )
     parser.add_argument(
         "--input-dir",

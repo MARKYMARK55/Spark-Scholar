@@ -29,9 +29,9 @@
 #   curl -X POST http://localhost:8002/v1/chat/completions \
 #     -H "Authorization: Bearer simple-api-key" \
 #     -H "Content-Type: application/json" \
-#     -d '{"model": "arxiv-rag", "messages": [{"role": "user", "content": "What is RLHF?"}]}'
+#     -d '{"model": "spark-scholar", "messages": [{"role": "user", "content": "What is RLHF?"}]}'
 
-name: arxiv-rag-proxy
+name: spark-scholar-proxy
 
 networks:
   llm-net:
@@ -44,7 +44,7 @@ services:
     build:
       context: ..
       dockerfile: rag_proxy/Dockerfile
-    image: arxiv-rag-proxy:latest
+    image: spark-scholar-proxy:latest
     container_name: rag-proxy
     restart: unless-stopped
     networks:

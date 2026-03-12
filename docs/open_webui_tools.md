@@ -369,7 +369,7 @@ class Tools:
         :return: Top matching chunks with source metadata.
         """
         payload = {
-            "model": "arxiv-rag",
+            "model": "spark-scholar",
             "messages": [{"role": "user", "content": query}],
             "max_tokens": 1,          # We only want the retrieved context, not a full answer
             "stream": False,
@@ -592,7 +592,7 @@ Notable tools worth installing:
 - `local-model` (SparkRun) — tool calling works if your model supports it
   (Qwen3, Nemotron, Phi-4 all support function calling)
 - `phi-mini` — good for tool routing / classification, fast tool-augmented responses
-- `arxiv-rag` (RAG proxy) — the proxy itself does retrieval; tools add live lookups on top
+- `spark-scholar` (RAG proxy) — the proxy itself does retrieval; tools add live lookups on top
 
 ---
 

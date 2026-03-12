@@ -1,4 +1,4 @@
-# UI Interfaces — arxiv-rag Stack
+# UI Interfaces — Spark Scholar Stack
 
 Every service in the stack that exposes a browser-accessible UI, plus notes on
 how each one fits into the overall workflow.
@@ -41,10 +41,10 @@ The primary day-to-day interface. Everything you do in a chat session starts her
 
    | Name           | URL                         | API Key        |
    |----------------|-----------------------------|----------------|
-   | Arxiv RAG      | http://rag-proxy:8002/v1    | simple-api-key |
+   | Spark Scholar  | http://rag-proxy:8002/v1    | simple-api-key |
 
 5. After adding connections, the model list will show both `local-model` (SparkRun)
-   and `arxiv-rag` (RAG-augmented) in the model selector
+   and `spark-scholar` (RAG-augmented) in the model selector
 
 ### Key settings (Admin → Settings)
 
@@ -58,7 +58,7 @@ The primary day-to-day interface. Everything you do in a chat session starts her
 | Path | How to use | Best for |
 |------|-----------|---------|
 | **Path A — built-in RAG** | Upload a PDF/URL in chat, or via Workspace | Ad-hoc docs, one-off papers, personal files |
-| **Path B — arxiv-rag proxy** | Select `arxiv-rag` model in model selector | Queries against the indexed arxiv/docs collections |
+| **Path B — spark-scholar proxy** | Select `spark-scholar` model in model selector | Queries against the indexed arxiv/docs collections |
 
 ---
 
@@ -178,7 +178,7 @@ automatically appear in Langflow's model dropdowns.
 | Build a multi-step research agent | Web search → Summarise → Rerank → Answer |
 | Export a tested flow to production code | Export JSON → convert to LangGraph |
 
-Flows are persisted in the `arxiv_langflow_data` Docker volume.
+Flows are persisted in the `spark_scholar_langflow_data` Docker volume.
 
 ---
 
@@ -307,7 +307,7 @@ The RAG proxy caches full `(query, model, collection)` responses for `CACHE_TTL_
 | Task | Go to |
 |------|-------|
 | Chat with local LLM | Open WebUI → 8080 |
-| Chat with RAG over arxiv papers | Open WebUI → select `arxiv-rag` model |
+| Chat with RAG over arxiv papers | Open WebUI → select `spark-scholar` model |
 | Upload and chat over a PDF | Open WebUI → 8080 → 📎 attach |
 | Check how many papers are indexed | Qdrant Dashboard → 6333/dashboard |
 | Add a cloud model (OpenAI, Claude, etc.) | LiteLLM Admin → 4000/ui |

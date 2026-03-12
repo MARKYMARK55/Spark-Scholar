@@ -1,7 +1,7 @@
 """
 pipeline/router.py
 ==================
-Collection routing for the Arxiv RAG pipeline.
+Collection routing for the Spark Scholar pipeline.
 
 Two entry points:
   - route_query(query)       → list of 1-3 collection names for retrieval

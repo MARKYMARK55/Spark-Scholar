@@ -11,7 +11,7 @@
 # Open WebUI connections (add manually after first start):
 #   Admin → Settings → Connections:
 #   ① http://litellm:4000   — local SparkRun models (primary, pre-configured)
-#   ② http://rag-proxy:8002 — Arxiv RAG-augmented (add separately)
+#   ② http://rag-proxy:8002 — Spark Scholar RAG-augmented (add separately)
 #
 # Qdrant is used for Open WebUI document uploads (built-in RAG / Path A).
 # Our Arxiv collections are searched separately via the RAG proxy (Path B).
@@ -34,7 +34,7 @@
 #   Open WebUI → 8080
 #   Langflow   → 7860
 
-name: arxiv-core
+name: spark-scholar-core
 
 networks:
   llm-net:
@@ -43,11 +43,11 @@ networks:
 
 volumes:
   litellm_db:
-    name: arxiv_litellm_db
+    name: spark_scholar_litellm_db
   openwebui_data:
-    name: arxiv_openwebui_data
+    name: spark_scholar_openwebui_data
   langflow_data:
-    name: arxiv_langflow_data
+    name: spark_scholar_langflow_data
 
 services:
 
@@ -120,7 +120,7 @@ services:
   # After startup, manually add these extra connections in the UI:
   #   Admin → Settings → Connections → + Add Connection:
   #     Name: "Cloud Models"   URL: http://litellm-cloud:4001/v1  Key: simple-api-key
-  #     Name: "Arxiv RAG"      URL: http://rag-proxy:8002/v1      Key: simple-api-key
+  #     Name: "Spark Scholar"      URL: http://rag-proxy:8002/v1      Key: simple-api-key
   openwebui:
     image: ghcr.io/open-webui/open-webui:cuda
     container_name: openwebui

@@ -1,6 +1,6 @@
 # core_services/redis.yml
 # =================
-# Valkey cache for the Arxiv RAG pipeline.
+# Valkey cache for the Spark Scholar pipeline.
 # Valkey is a Redis-compatible open-source fork (Redis 7.x API compatible).
 # Your running instance is valkey/valkey:8-alpine — this file matches that.
 #

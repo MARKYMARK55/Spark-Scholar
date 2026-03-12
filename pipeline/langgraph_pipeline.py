@@ -1,7 +1,7 @@
 """
 pipeline/langgraph_pipeline.py
 ===============================
-Full LangGraph orchestration for the Arxiv RAG pipeline.
+Full LangGraph orchestration for the Spark Scholar pipeline.
 
 Graph structure
 ---------------
@@ -90,7 +90,7 @@ TIME_SENSITIVE_KEYWORDS = [
 # ---------------------------------------------------------------------------
 
 class RAGState(TypedDict):
-    """Full state for the Arxiv RAG LangGraph pipeline."""
+    """Full state for the Spark Scholar LangGraph pipeline."""
     # Input
     query: str
     model: Optional[str]

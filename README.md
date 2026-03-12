@@ -1,10 +1,10 @@
-# arxiv-rag
+# spark-scholar
 
 Production arXiv RAG stack for DGX Spark — hybrid dense+sparse retrieval,
 BGE-M3 reranking, LangGraph orchestration, and an OpenAI-compatible proxy
 that plugs directly into Open WebUI.
 
-**GitHub:** https://github.com/MARKYMARK55/arxiv-rag
+**GitHub:** https://github.com/MARKYMARK55/spark-scholar
 
 ---
 
@@ -252,7 +252,7 @@ python ingest/08_expand_citations.py --arxiv 2303.08774 --depth 2
 ## Repository Structure
 
 ```
-arxiv-rag/
+spark-scholar/
 ├── .env.example                   # Copy to env/.env — all local keys pre-filled
 ├── README.md                      # This file — index + architecture + quick start
 ├── requirements.txt               # Python dependencies

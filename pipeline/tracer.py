@@ -1,7 +1,7 @@
 """
 pipeline/tracer.py
 ==================
-Langfuse observability tracing for the Arxiv RAG pipeline.
+Langfuse observability tracing for the Spark Scholar pipeline.
 
 Traces each RAG request end-to-end:
   - start_trace()        → creates a Langfuse trace, returns trace_id
@@ -46,7 +46,7 @@ def _try_import_langfuse():
 
 class RAGTracer:
     """
-    Langfuse tracing wrapper for the Arxiv RAG pipeline.
+    Langfuse tracing wrapper for the Spark Scholar pipeline.
 
     All public methods are no-ops when Langfuse credentials are not configured
     or when the langfuse package is not installed.
@@ -102,7 +102,7 @@ class RAGTracer:
         try:
             trace = self._lf.trace(
                 id=trace_id,
-                name="arxiv-rag",
+                name="spark-scholar",
                 input={"query": query},
                 metadata=metadata or {},
                 tags=["arxiv", "rag"],

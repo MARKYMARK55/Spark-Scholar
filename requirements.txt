@@ -1,4 +1,4 @@
-# arxiv-rag — root requirements
+# spark-scholar — root requirements
 # Install with: pip install -r requirements.txt
 #
 # For the sparse embedder service, use sparse_embedder/requirements.txt

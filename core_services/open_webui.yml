@@ -18,7 +18,7 @@ name: openwebui
 
 volumes:
   openwebui_data:
-    name: arxiv_openwebui_data
+    name: spark_scholar_openwebui_data
 
 networks:
   llm-net:
