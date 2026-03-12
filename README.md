@@ -1,10 +1,11 @@
 # spark-scholar
 
-Local research knowledge base for DGX Spark — ingest any PDF or arXiv paper
-with BGE-M3 chunking and hybrid dense+sparse embedding, auto-expand your corpus
-via L1→L2→L3 citation graph traversal, and query everything through a
-cross-encoder reranked LangGraph pipeline via an OpenAI-compatible proxy that
-plugs directly into Open WebUI.
+Self-hosted research knowledge base for DGX Spark with three ingestion paths:
+**2.96M arXiv abstracts** indexed by topic, **custom PDF chunking and embedding**
+via BGE-M3 dense+sparse hybrid, and **dynamic corpus expansion** using Semantic
+Scholar / AI2 to auto-fetch L1→L2→L3 citation graphs — all queryable through
+Open WebUI tools with cross-encoder reranking and a LangGraph orchestration
+pipeline.
 
 **GitHub:** https://github.com/MARKYMARK55/spark-scholar
 
