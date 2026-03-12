@@ -1,0 +1,74 @@
+# --------------------------------------------------------------
+# start_qdrant.yml   –   GPU-enabled Qdrant for DGX-Spark
+# --------------------------------------------------------------
+# Current recommendations (Feb 2026):
+#   • Use built-in dashboard → http://localhost:6333/dashboard
+#   • No separate web-ui container needed anymore
+#   • API key loaded from ../../env/.env (relative to this file)
+# --------------------------------------------------------------
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest              # latest stable – includes GPU indexing support
+    container_name: qdrant
+    restart: unless-stopped
+
+    env_file:
+      - ../env/.env                          # or use absolute path if preferred
+
+    environment:
+      QDRANT__SERVICE__API_KEY: simple-api-key   # ← correct variable name + safe substitution
+      QDRANT_STORAGE_PATH: "/qdrant/storage"
+      QDRANT_HOST: "0.0.0.0"
+      QDRANT_PORT: "6333"
+      QDRANT_LOG_LEVEL: "info"
+      QDRANT__GPU__INDEXING: "true"
+
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+
+    volumes:
+      - type: bind
+        source: ~/RAG/qdrant_storage
+        target: /qdrant/storage
+        consistency: consistent
+
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+        limits:
+          cpus: "4"
+          memory: 8G
+
+    healthcheck:
+      test: >
+        sh -c 'curl -f http://localhost:6333/ready ||
+               [ "$(nvidia-smi --query-gpu=name --format=csv,noheader)" != "" ]'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+    networks:
+      - llm-net
+
+networks:
+  llm-net:
+    external: true
+    name: llm-net

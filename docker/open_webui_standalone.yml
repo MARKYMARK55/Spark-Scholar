@@ -1,0 +1,99 @@
+# open_webui_standalone.yml
+# ──────────────────────────────────────────────────────────────────────────────
+# Standalone Open WebUI connected to the local embedding + Qdrant stack.
+# Use this if you already have the embedding stack and Qdrant running and
+# just want to bring up Open WebUI on its own.
+#
+# Prerequisites running before starting this:
+#   - llm-net Docker network exists       (docker network create llm-net)
+#   - Qdrant running on llm-net           (docker/qdrant.yml)
+#   - LiteLLM running on llm-net          (docker/core_services.yml)
+#   - BGE-M3 dense embedder on port 8025  (docker/bge_m3_dense_embedder.yml)
+#   - SearXNG running on llm-net (optional, for web search)
+#
+# Open WebUI will be available at: http://localhost:8080
+# ──────────────────────────────────────────────────────────────────────────────
+
+name: openwebui
+
+networks:
+  llm-net:
+    external: true
+    name: llm-net
+
+services:
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:cuda
+    container_name: openwebui
+    restart: always
+    ports:
+      - "8080:8080"
+
+    volumes:
+      # Persistent Open WebUI data (chat history, settings, uploaded files)
+      - /home/mark/openWebUI:/app/backend/data
+      # HuggingFace model cache (shared with host to avoid re-downloads)
+      - /home/mark/.cache/huggingface:/root/.cache/huggingface
+
+    env_file:
+      - ../env/.env
+
+    environment:
+      # ── LLM backend: LiteLLM proxy ──────────────────────────────────────────
+      OPENAI_API_BASE_URL: "http://litellm:4000/v1"
+      OPENAI_API_KEY: "simple-api-key"
+
+      # ── Vector DB: Qdrant ───────────────────────────────────────────────────
+      VECTOR_DB: "qdrant"
+      QDRANT_URI: "http://qdrant:6333"
+      QDRANT_API_KEY: "simple-api-key"
+
+      # ── RAG embedding model ─────────────────────────────────────────────────
+      # Points Open WebUI at the BGE-M3 dense embedder (port 8025 via LiteLLM)
+      # Open WebUI uses this for its own document upload/chunking pipeline.
+      # Note: this is Open WebUI's built-in RAG, separate from the custom
+      # hybrid pipeline. See docs/open_webui_rag_setup.md for the distinction.
+      RAG_EMBEDDING_ENGINE: "openai"
+      RAG_EMBEDDING_MODEL: "bge-m3-embedder"
+      OPENAI_API_BASE_URL_FOR_RAG: "http://litellm:4000/v1"
+
+      # ── Chunking settings ───────────────────────────────────────────────────
+      # Chunk size and overlap for Open WebUI's built-in document processing.
+      # These are intentionally conservative — the custom hybrid pipeline uses
+      # its own chunking logic with finer control.
+      CHUNK_SIZE: "1500"
+      CHUNK_OVERLAP: "200"
+
+      # ── Web Search: SearXNG ─────────────────────────────────────────────────
+      ENABLE_WEB_SEARCH: "true"
+      ENABLE_SEARCH_QUERY_GENERATION: "false"
+      WEB_SEARCH_ENGINE: "searxng"
+      SEARXNG_URL: "http://searxng:8888"
+      WEB_SEARCH_RESULT_COUNT: "20"
+      WEB_SEARCH_CONCURRENT_REQUESTS: "5"
+      # Bypass Open WebUI's internal embedding of web results —
+      # the custom RAG proxy handles this instead
+      BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: "true"
+
+      # ── UI / Auth ───────────────────────────────────────────────────────────
+      WEBUI_NAME: "DGX Spark"
+      ENABLE_SIGNUP: "false"         # disable after creating your admin account
+      DEFAULT_LOCALE: "en-GB"
+
+    networks:
+      - llm-net
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
