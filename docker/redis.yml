@@ -1,0 +1,72 @@
+# docker/redis.yml
+# =================
+# Redis (Valkey-compatible) cache for the Arxiv RAG pipeline.
+#
+# Used by:
+#   - pipeline/cache.py   — caches full RAG responses (TTL from CACHE_TTL_SECONDS)
+#   - rag-proxy           — passes REDIS_URL to the pipeline
+#
+# Persistence
+# -----------
+# Data is saved every 60 seconds if at least 1 key changed (RDB snapshot).
+# Named volume `redis_data` survives container restarts and upgrades.
+# For stronger durability, append `--appendonly yes` to the command.
+#
+# Password
+# --------
+# Set REDIS_PASSWORD in env/.env to enable AUTH.
+# Leave empty / unset for no-auth (default — safe on llm-net).
+#
+# Usage
+# -----
+#   docker compose -f docker/redis.yml up -d
+#   docker compose -f docker/redis.yml down
+#
+# Test:
+#   docker exec redis redis-cli ping          # → PONG
+#   docker exec redis redis-cli info server   # server info
+
+name: arxiv-redis
+
+networks:
+  llm-net:
+    external: true
+    name: llm-net
+
+volumes:
+  redis_data:
+    name: arxiv_redis_data
+
+services:
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: redis
+    restart: unless-stopped
+    networks:
+      - llm-net
+    ports:
+      - "6379:6379"               # Expose for local scripts; remove if Redis should be internal-only
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server
+      --save 60 1
+      --save 300 10
+      --loglevel warning
+      --maxmemory 4gb
+      --maxmemory-policy allkeys-lru
+    environment:
+      # Uncomment to enable password auth:
+      # REDIS_PASSWORD: "${REDIS_PASSWORD:-}"
+      TZ: UTC
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 5g

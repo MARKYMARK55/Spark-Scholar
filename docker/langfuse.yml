@@ -1,0 +1,95 @@
+# docker/langfuse.yml
+# ====================
+# Langfuse — self-hosted LLM observability and tracing.
+#
+# Traces every RAG request through: retrieval → reranking → generation.
+# Silently disabled in the pipeline if LANGFUSE_SECRET_KEY is not set in env/.env.
+#
+# Setup
+# -----
+# 1. Start services:
+#      docker compose -f docker/langfuse.yml up -d
+# 2. Open http://localhost:3000 and create an account
+# 3. Create a project → Settings → API Keys
+# 4. Copy secret + public keys into env/.env:
+#      LANGFUSE_SECRET_KEY=sk-lf-...
+#      LANGFUSE_PUBLIC_KEY=pk-lf-...
+#      LANGFUSE_HOST=http://localhost:3000
+# 5. Restart the rag-proxy so it picks up the new keys
+#
+# Usage
+# -----
+#   docker compose -f docker/langfuse.yml up -d
+#   docker compose -f docker/langfuse.yml down
+#
+# Data
+# ----
+# Trace data stored in named volume `langfuse_db` (Postgres).
+# Backup with: docker exec langfuse-db pg_dump -U langfuse langfuse > langfuse_backup.sql
+
+name: arxiv-langfuse
+
+networks:
+  llm-net:
+    external: true
+    name: llm-net
+
+volumes:
+  langfuse_db:
+    name: arxiv_langfuse_db
+
+services:
+
+  langfuse-db:
+    image: postgres:16-alpine
+    container_name: langfuse-db
+    restart: unless-stopped
+    networks:
+      - llm-net
+    volumes:
+      - langfuse_db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: langfuse_pass
+      POSTGRES_DB: langfuse
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+
+  langfuse:
+    image: ghcr.io/langfuse/langfuse:latest
+    container_name: langfuse
+    restart: unless-stopped
+    networks:
+      - llm-net
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../env/.env
+    environment:
+      DATABASE_URL: "postgresql://langfuse:langfuse_pass@langfuse-db:5432/langfuse"
+      NEXTAUTH_URL: "http://localhost:3000"
+      NEXTAUTH_SECRET: "${LITELLM_MASTER_KEY:-change-me-langfuse}"
+      SALT: "${LITELLM_MASTER_KEY:-change-me-langfuse-salt}"
+      PORT: "3000"
+      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "false"
+      TELEMETRY_ENABLED: "false"
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/api/public/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 2g

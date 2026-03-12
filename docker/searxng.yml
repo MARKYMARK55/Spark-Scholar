@@ -1,0 +1,71 @@
+# docker/searxng.yml
+# ===================
+# SearXNG — private meta-search engine for web search fallback.
+#
+# Used by:
+#   - pipeline/langgraph_pipeline.py  — web_search node for time-sensitive queries
+#   - Open WebUI                       — optional web search integration
+#
+# Access
+# ------
+#   http://localhost:8888  — SearXNG UI (private, no login needed on llm-net)
+#
+# Configuration
+# -------------
+# On first run, SearXNG writes its config to the searxng_data volume.
+# To customise enabled engines / UI settings, edit the file inside the container:
+#   docker exec -it searxng sh
+#   vi /etc/searxng/settings.yml
+# Then restart: docker compose -f docker/searxng.yml restart
+#
+# Usage
+# -----
+#   docker compose -f docker/searxng.yml up -d
+#   docker compose -f docker/searxng.yml down
+
+name: arxiv-searxng
+
+networks:
+  llm-net:
+    external: true
+    name: llm-net
+
+volumes:
+  searxng_data:
+    name: arxiv_searxng_data
+
+services:
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    restart: unless-stopped
+    networks:
+      - llm-net
+    ports:
+      - "8888:8080"
+    volumes:
+      - searxng_data:/etc/searxng
+    environment:
+      SEARXNG_SECRET: "${LITELLM_MASTER_KEY:-change-me-searxng-secret}"
+      SEARXNG_BIND_ADDRESS: "0.0.0.0:8080"
+      # Disable analytics / telemetry
+      SEARXNG_ENABLE_METRICS: "false"
+    env_file:
+      - ../env/.env
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1g

@@ -1,96 +1,149 @@
-# start_core_services.yml
-# Core infrastructure: LiteLLM proxy, Pipelines, Open WebUI
-# Each service loads its own .env explicitly – no fallbacks, no missing files
+# docker/core_services.yml
+# =========================
+# Core services: LiteLLM proxy, Open WebUI, Langflow.
+# Redis, SearXNG, and Langfuse have their own standalone YML files.
+#
+# Prerequisites
+# -------------
+# - llm-net Docker network must exist:  docker network create llm-net
+# - env/.env must be configured (copy from .env.example)
+# - Your vLLM inference server must be running (host.docker.internal:8000)
+#
+# Usage
+# -----
+#   docker compose -f docker/core_services.yml up -d
+#   docker compose -f docker/core_services.yml logs -f litellm
+#
+# Port map
+# --------
+#   LiteLLM    → 4000
+#   Open WebUI → 8080
+#   Langflow   → 7860
 
-name: core-infra
+name: arxiv-core
 
 networks:
   llm-net:
+    external: true
     name: llm-net
-    driver: bridge
 
 volumes:
-  litellm-db:
+  litellm_db:
+    name: arxiv_litellm_db
+  openwebui_data:
+    name: arxiv_openwebui_data
+  langflow_data:
+    name: arxiv_langflow_data
 
 services:
 
-  # ── LiteLLM Postgres DB (required for LiteLLM Admin UI) ─────────────────────
+  # ── LiteLLM Postgres (required for spend tracking + admin UI) ────────────────
   litellm-db:
-    image: postgres:16
+    image: postgres:16-alpine
     container_name: litellm-db
-    restart: always
-    environment:
-      POSTGRES_DB: litellm
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: litellm
-    volumes:
-      - litellm-db:/var/lib/postgresql/data
+    restart: unless-stopped
     networks:
       - llm-net
+    volumes:
+      - litellm_db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: litellm
+      POSTGRES_PASSWORD: litellm_pass
+      POSTGRES_DB: litellm
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U litellm"]
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 1g
 
-  # ── LiteLLM Proxy ────────────────────────────────────────────────────────────
+  # ── LiteLLM Proxy ─────────────────────────────────────────────────────────────
+  # Unified OpenAI-compatible gateway in front of all models (local + cloud).
+  # All services call LiteLLM with simple-api-key; admin ops use LITELLM_MASTER_KEY.
   litellm:
     image: ghcr.io/berriai/litellm:main-latest
     container_name: litellm
-    restart: always
+    restart: unless-stopped
+    networks:
+      - llm-net
     ports:
       - "4000:4000"
     volumes:
-      - ./litellm_config.yaml:/app/config.yaml:ro
-      - /home/mark/vllm/openWebUI_tools:/app/backend/functions
-    command: --config /app/config.yaml --detailed_debug --num_workers 4
-    environment:
-      LITELLM_MASTER_KEY: "simple-api-key"
-      DATABASE_URL: "postgresql://litellm:litellm@litellm-db:5432/litellm"
-    networks:
-      - llm-net
+      - ../config/litellm_config.yaml:/app/config.yaml:ro
+      - ~/.cache/huggingface:/root/.cache/huggingface:ro
     env_file:
       - ../env/.env
+    environment:
+      LITELLM_MASTER_KEY: "${LITELLM_MASTER_KEY:-sk-change-me}"
+      LITELLM_DATABASE_URL: "postgresql://litellm:litellm_pass@litellm-db:5432/litellm"
+    command: ["--config", "/app/config.yaml", "--port", "4000", "--num_workers", "4"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
       litellm-db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
     deploy:
       resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+        limits:
+          memory: 4g
 
-  # ── Pipelines ────────────────────────────────────────────────────────────────
-  pipelines:
-    image: pipeline-deps:latest
-    container_name: pipelines
-    restart: always
-    entrypoint: ["python", "-m", "uvicorn", "multi_mode_pipeline:app", "--host", "0.0.0.0", "--port", "9099", "--reload"]
+  # ── Open WebUI ────────────────────────────────────────────────────────────────
+  # Web chat interface. Connects to LiteLLM for all model requests.
+  # For RAG-augmented chat, add the rag-proxy as an additional connection in:
+  #   Admin → Settings → Connections → Add Connection → http://rag-proxy:8002
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:cuda
+    container_name: openwebui
+    restart: unless-stopped
+    networks:
+      - llm-net
     ports:
-      - "9099:9099"
+      - "8080:8080"
     volumes:
-      - /home/mark/vllm/model_stack/pipelines:/app/pipelines
+      - openwebui_data:/app/backend/data
+      - ~/.cache/huggingface:/root/.cache/huggingface:ro
     env_file:
       - ../env/.env
     environment:
-      DEBUG: "true"
-      LOG_LEVEL: "DEBUG"
-      PIPELINES_MODE: "full"
-      PIPELINES_URLS: ""
-      PIPELINES_DIR: "/app/pipelines"
-      GLOBAL_LOG_LEVEL: "DEBUG"
-      PYTHONPATH: "/app/pipelines"
-      RESET_PIPELINES_DIR: "false"
-      PIPELINES_REQUIREMENTS_PATH: ""
-      NVIDIA_VISIBLE_DEVICES: "all"
-      PIPELINES_API_KEY: "simple-api-key"
-    networks:
-      - llm-net
-    shm_size: 8g
+      OPENAI_API_BASE_URL: "http://litellm:4000/v1"
+      OPENAI_API_KEY: "${LITELLM_API_KEY:-simple-api-key}"
+      WEBUI_SECRET_KEY: "${WEBUI_SECRET_KEY:-simple-api-key}"
+      ENABLE_OLLAMA_API: "false"
+      ENABLE_OPENAI_API: "true"
+      # Web search via SearXNG
+      ENABLE_WEB_SEARCH: "true"
+      ENABLE_SEARCH_QUERY_GENERATION: "false"
+      WEB_SEARCH_ENGINE: "searxng"
+      SEARXNG_URL: "http://searxng:8888"
+      WEB_SEARCH_RESULT_COUNT: "20"
+      WEB_SEARCH_CONCURRENT_REQUESTS: "5"
+      BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: "true"
+      # Qdrant vector DB for Open WebUI document uploads (Path A)
+      VECTOR_DB: "qdrant"
+      QDRANT_URI: "http://qdrant:6333"
+      QDRANT_API_KEY: "${QDRANT_API_KEY:-simple-api-key}"
+      # BGE-M3 as the embedding model via LiteLLM
+      RAG_EMBEDDING_ENGINE: "openai"
+      RAG_EMBEDDING_MODEL: "bge-m3-embedder"
+      RAG_RERANKING_MODEL: "bge-reranker-v2-m3"
+    depends_on:
+      litellm:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
     deploy:
       resources:
         reservations:
@@ -99,78 +152,42 @@ services:
               count: all
               capabilities: [gpu]
         limits:
-          cpus: "8.0"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9099/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+          memory: 8g
 
-  # ── Open WebUI ───────────────────────────────────────────────────────────────
-  openwebui:
-    image: ghcr.io/open-webui/open-webui:cuda
-    container_name: openwebui
-    restart: always
-    ports:
-      - "8080:8080"
-    volumes:
-      - /home/mark/openWebUI:/app/backend/data
-      - /home/mark/.cache/huggingface:/root/.cache/huggingface
-      - /home/mark/vllm/model_stack/RAG/shared-sandbox:/app/shared-sandbox
-    env_file:
-      - ../env/.env
-    environment:
-      OPENAI_API_BASE_URL: "http://litellm:4000/v1"
-      OPENAI_API_KEY: simple-api-key
-      LITELLM_LOG: DEBUG
-      # ── Web Search ───────────────────────────────────────────────
-      # Feature ON so globe icon works, auto-trigger OFF
-      ENABLE_WEB_SEARCH: "true"
-      ENABLE_SEARCH_QUERY_GENERATION: "false"
-      WEB_SEARCH_ENGINE: "searxng"
-      SEARXNG_URL: "http://searxng:8888"
-      WEB_SEARCH_RESULT_COUNT: "20"
-      WEB_SEARCH_CONCURRENT_REQUESTS: "5"
-      BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL: "true"
-      # ── Vector DB ────────────────────────────────────────────────
-      VECTOR_DB: "qdrant"
-      QDRANT_URI: "http://qdrant:6333"
-      QDRANT_API_KEY: simple-api-key
-    networks:
-      - llm-net
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    depends_on:
-      - litellm
-
-  # ── Langflow ─────────────────────────────────────────────────────────────────
+  # ── Langflow ──────────────────────────────────────────────────────────────────
+  # Visual pipeline builder for prototyping RAG flows and agent workflows.
   langflow:
     image: langflowai/langflow:latest
     container_name: langflow
-    restart: always
+    restart: unless-stopped
+    networks:
+      - llm-net
     ports:
       - "7860:7860"
     volumes:
-      - /home/mark/vllm/model_stack/langflow/data:/app/data
-      - /home/mark/vllm/model_stack/langflow/components:/app/custom_components
+      - langflow_data:/app/langflow
+    env_file:
+      - ../env/.env
     environment:
       LANGFLOW_HOST: "0.0.0.0"
       LANGFLOW_PORT: "7860"
       LANGFLOW_WORKERS: "2"
-      LANGFLOW_COMPONENTS_PATH: "/app/custom_components"
+      OPENAI_API_KEY: "${LITELLM_API_KEY:-simple-api-key}"
       OPENAI_API_BASE: "http://litellm:4000/v1"
-      OPENAI_API_KEY: "simple-api-key"
     command: >
       langflow run
       --host 0.0.0.0
       --port 7860
-      --components-path /app/custom_components
-    networks:
-      - llm-net
     depends_on:
-      - litellm
+      litellm:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:7860/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 4g

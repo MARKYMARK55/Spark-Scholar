@@ -103,7 +103,7 @@ services:
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
     env_file:
-      - ../.env
+      - ../env/.env
     environment:
       VLLM_WORKER_MULTIPROC_METHOD: spawn
     command: >
@@ -148,7 +148,7 @@ services:
     volumes:
       - ~/.cache/huggingface:/app/.hf_cache
     env_file:
-      - ../.env
+      - ../env/.env
     environment:
       SPARSE_MODEL: "BAAI/bge-m3"
       SPARSE_BATCH_SIZE: "32"
@@ -182,7 +182,7 @@ services:
     volumes:
       - ~/.cache/huggingface:/root/.cache/huggingface
     env_file:
-      - ../.env
+      - ../env/.env
     command: >
       --model BAAI/bge-reranker-v2-m3
       --served-model-name bge-reranker-v2-m3
@@ -261,7 +261,7 @@ services:
     volumes:
       - ../config/litellm_config.yaml:/app/config.yaml:ro
     env_file:
-      - ../.env
+      - ../env/.env
     environment:
       LITELLM_MASTER_KEY: "${LITELLM_MASTER_KEY:-sk-change-me}"
       LITELLM_DATABASE_URL: "postgresql://litellm:litellm_pass@litellm-db:5432/litellm"
@@ -291,7 +291,7 @@ services:
     volumes:
       - openwebui_data:/app/backend/data
     env_file:
-      - ../.env
+      - ../env/.env
     environment:
       OPENAI_API_BASE_URL: "http://litellm:4000/v1"
       OPENAI_API_KEY: "${LITELLM_API_KEY:-simple-api-key}"
@@ -343,7 +343,7 @@ services:
     volumes:
       - langflow_data:/app/langflow
     env_file:
-      - ../.env
+      - ../env/.env
     environment:
       LANGFLOW_HOST: "0.0.0.0"
       LANGFLOW_PORT: "7860"
@@ -373,7 +373,7 @@ services:
     ports:
       - "${RAG_PROXY_PORT:-8002}:8002"
     env_file:
-      - ../.env
+      - ../env/.env
     environment:
       QDRANT_URL: "http://qdrant:6333"
       BGE_M3_DENSE_URL: "http://bge-m3-dense-embedder:8025"
@@ -427,7 +427,7 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - ../.env
+      - ../env/.env
     environment:
       DATABASE_URL: "postgresql://langfuse:langfuse_pass@langfuse-db:5432/langfuse"
       NEXTAUTH_URL: "http://localhost:3000"
