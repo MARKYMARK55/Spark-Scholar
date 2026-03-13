@@ -212,8 +212,8 @@ def ingest_dense(
 
             payload = {
                 "title": title,
-                "abstract": abstract[:1000],  # Truncate for payload size
-                "authors": doc.get("authors", "")[:500],
+                "abstract": abstract,
+                "authors": doc.get("authors", ""),
                 "categories": doc.get("categories", ""),
                 "year": doc.get("year"),
                 "update_date": doc.get("update_date", ""),

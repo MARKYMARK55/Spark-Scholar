@@ -208,8 +208,8 @@ def ingest_sparse(
 
             payload = {
                 "title": title,
-                "abstract": abstract[:1000],
-                "authors": doc.get("authors", "")[:500],
+                "abstract": abstract,
+                "authors": doc.get("authors", ""),
                 "categories": doc.get("categories", ""),
                 "year": doc.get("year"),
                 "update_date": doc.get("update_date", ""),

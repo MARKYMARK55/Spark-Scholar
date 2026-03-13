@@ -140,7 +140,14 @@ def encode_sparse(texts: List[str]) -> List[SparseVector]:
         data = _retry_post(client, url, payload)
 
     results: List[SparseVector] = []
-    for item in data["embeddings"]:
+    # Handle both response formats:
+    #   - {"embeddings": [{"indices": ..., "values": ...}, ...]}
+    #   - {"items": [{"sparse": {"indices": ..., "values": ...}}, ...]}
+    if "items" in data:
+        items = [item["sparse"] for item in data["items"]]
+    else:
+        items = data["embeddings"]
+    for item in items:
         results.append(
             SparseVector(
                 indices=[int(i) for i in item["indices"]],
