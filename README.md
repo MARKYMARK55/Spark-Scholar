@@ -1,5 +1,10 @@
 # spark-scholar
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+[![Docker](https://img.shields.io/badge/docker-compose-blue)](https://docs.docker.com/compose/)
+[![Hardware: DGX Spark](https://img.shields.io/badge/hardware-DGX%20Spark-76b900)](https://www.nvidia.com/en-us/products/workstations/dgx-spark/)
+
 Self-hosted research knowledge base for DGX Spark with three ingestion paths:
 **2.96M arXiv abstracts** indexed by topic, **custom PDF chunking and embedding**
 via BGE-M3 dense+sparse hybrid, and **dynamic corpus expansion** using Semantic
@@ -8,6 +13,23 @@ Open WebUI tools with cross-encoder reranking and a LangGraph orchestration
 pipeline.
 
 **GitHub:** https://github.com/MARKYMARK55/spark-scholar
+**License:** MIT
+
+---
+
+## Who Is This For?
+
+Spark-Scholar is built for researchers and engineers who want a **fully self-hosted, GPU-accelerated academic assistant** — no cloud API bills, no data leaving your machine, no rate limits.
+
+| You should use this if… | You might not need this if… |
+|---|---|
+| You have a DGX Spark (128 GB unified memory) or similar high-VRAM machine | You just want a quick hosted RAG demo |
+| You query arXiv-scale corpora (millions of papers) | Your corpus is a few hundred PDFs |
+| You need reproducible, source-grounded answers with citation trails | You're fine with a general-purpose chatbot |
+| You want to run Qwen3-80B / Nemotron-H locally, not pay for GPT-4 | You don't want to manage Docker + vLLM |
+| You're building research infrastructure others in your lab will use | You're a solo user who just wants Zotero + ChatGPT |
+
+**Minimum viable hardware:** 64 GB VRAM (single GPU or unified memory). The full arXiv index (2.96M abstracts) requires ~80 GB disk and 18–22 hrs of initial embedding time; everything else starts in minutes.
 
 ---
 
@@ -205,6 +227,10 @@ Starts all services in dependency order with health checks:
 
 ### Verify
 ```bash
+# Full smoke test — health checks + end-to-end RAG query
+bash scripts/smoke_test.sh
+
+# Individual health endpoints
 curl http://localhost:8002/health     # RAG proxy
 curl http://localhost:4000/health     # LiteLLM
 curl http://localhost:6333/readyz     # Qdrant
@@ -332,3 +358,13 @@ spark-scholar/
     ├── troubleshooting.md         # 13 diagnostic scenarios + known limitations
     └── embedding_speed.md         # VRAM budgets, throughput benchmarks, tuning guide
 ```
+
+---
+
+## Contributing
+
+Bug reports, documentation fixes, new ingestion sources, and alternative hardware configs are all welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
+
+## License
+
+[MIT](LICENSE) — free to use, modify, and redistribute.
