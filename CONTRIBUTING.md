@@ -35,6 +35,22 @@ ruff check .
 black --line-length 100 .
 ```
 
+## Running the eval
+
+Before submitting pipeline changes, run the retrieval eval to confirm you haven't regressed:
+
+```bash
+# Quick check — 5 queries, hybrid mode
+python eval/retrieval_eval.py --limit 5 --quiet
+
+# Full comparison before/after your change
+python eval/retrieval_eval.py --mode all --output eval/before.json
+# ... make your change ...
+python eval/retrieval_eval.py --mode all --output eval/after.json
+```
+
+Include the summary table in your PR description if you changed anything in `pipeline/`.
+
 ## Pull request checklist
 
 - [ ] Tested on DGX Spark or documented alternative hardware

@@ -122,6 +122,13 @@ Spark-Scholar is built for researchers and engineers who want a **fully self-hos
 | Community tools hub + recommended installs | [docs/open_webui_tools.md → Community](docs/open_webui_tools.md#getting-community-tools) |
 | Debugging tools (not firing, verbose logs) | [docs/open_webui_tools.md → Debugging](docs/open_webui_tools.md#debugging-tools) |
 
+### 📊 Evaluation
+| Section | Location |
+|---|---|
+| Retrieval eval — Recall@k, MRR, nDCG@k | [eval/README.md](eval/README.md) |
+| QA dataset — 20 landmark ML/AI queries | [eval/qa_dataset.jsonl](eval/qa_dataset.jsonl) |
+| Compare dense / sparse / hybrid / hybrid+rerank | `python eval/retrieval_eval.py --mode all` |
+
 ### 🔧 Troubleshooting & Reference
 | Section | Location |
 |---|---|

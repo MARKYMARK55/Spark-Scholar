@@ -1,0 +1,20 @@
+{"query": "attention mechanism transformer self-attention multi-head", "relevant_ids": ["1706.03762"], "collection": "arxiv-cs-ml-ai", "notes": "Vaswani et al. 2017 — Attention Is All You Need"}
+{"query": "BERT pre-training deep bidirectional language model", "relevant_ids": ["1810.04805"], "collection": "arxiv-cs-ml-ai", "notes": "Devlin et al. 2018 — BERT"}
+{"query": "GPT language model unsupervised pre-training generative", "relevant_ids": ["2005.14165"], "collection": "arxiv-cs-ml-ai", "notes": "Brown et al. 2020 — GPT-3"}
+{"query": "diffusion model score matching denoising probabilistic image generation", "relevant_ids": ["2006.11239", "2105.05233"], "collection": "arxiv-cs-ml-ai", "notes": "Ho et al. DDPM + Song et al. score-based"}
+{"query": "neural network scaling laws compute optimal training data size", "relevant_ids": ["2203.15556", "2001.08361"], "collection": "arxiv-cs-ml-ai", "notes": "Chinchilla + Kaplan scaling laws"}
+{"query": "reinforcement learning from human feedback RLHF reward model alignment", "relevant_ids": ["2203.02155"], "collection": "arxiv-cs-ml-ai", "notes": "Ouyang et al. 2022 — InstructGPT"}
+{"query": "retrieval augmented generation RAG knowledge-intensive NLP open domain QA", "relevant_ids": ["2005.11401"], "collection": "arxiv-cs-ml-ai", "notes": "Lewis et al. 2020 — RAG"}
+{"query": "vision transformer ViT image recognition patches", "relevant_ids": ["2010.11929"], "collection": "arxiv-cs-ml-ai", "notes": "Dosovitskiy et al. 2020 — ViT"}
+{"query": "contrastive learning self-supervised representations SimCLR MoCo", "relevant_ids": ["2002.05709", "1911.05722"], "collection": "arxiv-cs-ml-ai", "notes": "Chen SimCLR + He MoCo"}
+{"query": "low rank adaptation LoRA fine-tuning large language models parameter efficient", "relevant_ids": ["2106.09685"], "collection": "arxiv-cs-ml-ai", "notes": "Hu et al. 2021 — LoRA"}
+{"query": "mixture of experts sparse gating routing token MoE transformer", "relevant_ids": ["2101.03961", "1701.06538"], "collection": "arxiv-cs-ml-ai", "notes": "Fedus Switch + Shazeer Outrageously Large"}
+{"query": "chain of thought prompting reasoning few-shot step by step", "relevant_ids": ["2201.11903"], "collection": "arxiv-cs-ml-ai", "notes": "Wei et al. 2022 — Chain-of-Thought"}
+{"query": "graph neural network node classification message passing", "relevant_ids": ["1609.02907", "1710.10903"], "collection": "arxiv-cs-ml-ai", "notes": "Kipf GCN + Hamilton GraphSAGE"}
+{"query": "object detection YOLO real-time convolutional neural network bounding box", "relevant_ids": ["1506.02640", "2004.10934"], "collection": "arxiv-cs-ml-ai", "notes": "Redmon YOLO + Bochkovskiy YOLOv4"}
+{"query": "stochastic gradient descent Adam optimizer momentum learning rate", "relevant_ids": ["1412.6980"], "collection": "arxiv-cs-ml-ai", "notes": "Kingma Ba 2014 — Adam"}
+{"query": "generative adversarial network GAN image synthesis discriminator generator", "relevant_ids": ["1406.2661", "1710.10196"], "collection": "arxiv-cs-ml-ai", "notes": "Goodfellow GAN + Karras ProGAN"}
+{"query": "recurrent neural network LSTM sequence to sequence machine translation", "relevant_ids": ["1409.3215", "1508.04025"], "collection": "arxiv-cs-ml-ai", "notes": "Sutskever seq2seq + Bahdanau attention"}
+{"query": "variational autoencoder VAE latent space generative model", "relevant_ids": ["1312.6114"], "collection": "arxiv-cs-ml-ai", "notes": "Kingma Welling 2013 — VAE"}
+{"query": "neural architecture search NAS automated machine learning efficient", "relevant_ids": ["1611.01578", "1905.11946"], "collection": "arxiv-cs-ml-ai", "notes": "Zoph NAS + Tan EfficientNet"}
+{"query": "federated learning privacy distributed training communication gradient", "relevant_ids": ["1602.05629"], "collection": "arxiv-cs-ml-ai", "notes": "McMahan et al. 2017 — FedAvg"}
