@@ -50,10 +50,25 @@ docker network create llm-net
 SparkRun is a CLI tool that starts and manages vLLM on DGX Spark.
 It is **not** managed by docker-compose — it runs alongside the stack.
 ```bash
-# Install SparkRun: https://github.com/scitrera/oss-spark-run
-# Start your inference model before starting the stack:
-sparkrun start Qwen/Qwen3-30B-A3B
-# or: sparkrun start nvidia/Nemotron-H-56B-Instruct-HF
+# Install SparkRun
+uvx sparkrun setup install      # recommended — manages venv + autocomplete
+# or: pip install sparkrun
+
+# Browse available recipes
+sparkrun list                   # all recipes from all registered registries
+sparkrun search nemotron        # search by keyword
+
+# Run a recipe (recipe slug, NOT a HuggingFace model path)
+sparkrun run nemotron-3-nano-nvfp4          # Nemotron-3-Nano 30B NVFP4  (~40 GB)
+sparkrun run nemotron-3-super-nvfp4         # Nemotron-3-Super 56B NVFP4  (~70 GB)
+sparkrun run qwen3-instruct-80b             # Qwen3-Instruct 80B FP8     (~80 GB)
+sparkrun run qwen3-coder-next-fp8           # Qwen3-Coder-Next FP8       (~40 GB)
+sparkrun run glm-4.7-flash-awq              # GLM-4.7-Flash AWQ           (~8 GB)
+
+# Manage
+sparkrun status                 # what's running
+sparkrun logs <recipe>          # reattach to output
+sparkrun stop <recipe>          # stop a model
 ```
 SparkRun exposes vLLM at `http://localhost:8000`. The LiteLLM container reaches it
 via `host.docker.internal:8000` (set automatically via `extra_hosts`).
@@ -300,8 +315,9 @@ The `LITELLM_MASTER_KEY` is only required for admin operations (model management
 
 For a second small model alongside your primary LLM:
 ```bash
-# Start Phi-4-mini on port 8001 via SparkRun
-sparkrun start microsoft/Phi-4-mini-instruct --port 8001
+# Find a Phi recipe and run it on port 8001
+sparkrun search phi             # check available recipes
+sparkrun run <phi-recipe> -o port=8001   # override port via -o flag
 ```
 It registers automatically as `phi-mini` / `phi` in LiteLLM (see `litellm_local.yaml`).
 

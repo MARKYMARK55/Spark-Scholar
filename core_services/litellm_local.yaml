@@ -73,8 +73,9 @@ model_list:
   #   • When the primary model is under load and you need parallel capacity
   #
   # HOW to load it with SparkRun:
-  #   sparkrun start microsoft/Phi-4-mini-instruct --port 8001
-  #   (or Phi-3.5-mini-instruct — both work identically in the proxy)
+  #   sparkrun search phi            # find the recipe slug first
+  #   sparkrun run <phi-recipe> -o port=8001
+  #   (override port with -o port=8001, any recipe flag can be overridden this way)
   #
   # The VLLM_PHI_URL env var defaults to host.docker.internal:8001.
   # Add it to env/.env if you use a non-standard port.

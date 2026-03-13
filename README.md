@@ -187,8 +187,12 @@ cp .env.example env/.env
 nano env/.env          # set VLLM_MODEL_NAME to match your SparkRun model
 
 # 3. Start your inference model via SparkRun
-#    https://github.com/scitrera/oss-spark-run
-sparkrun start Qwen/Qwen3-30B-A3B
+#    github.com/scitrera/sparkrun  |  spark-arena.com
+#    Install: uvx sparkrun setup install
+sparkrun run nemotron-3-nano-nvfp4          # ~30B Nemotron, fits in ~40GB
+sparkrun run qwen3-instruct-80b            # ~80B Qwen3, uses most of 128GB
+sparkrun run qwen3-coder-next-fp8          # coding-optimised
+# Browse all: sparkrun list   Search: sparkrun search <term>
 ```
 
 ### Start the full stack

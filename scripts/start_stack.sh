@@ -16,9 +16,11 @@
 #      Install:  uvx sparkrun setup install
 #      Run:      sparkrun run <recipe>
 #      Examples:
-#        sparkrun run qwen3-30b-a3b
-#        sparkrun run nemotron-nano-30b
-#        sparkrun run @spark-arena/<recipe-id>
+#        sparkrun run nemotron-3-nano-nvfp4     # Nemotron-3-Nano 30B NVFP4
+#        sparkrun run qwen3-instruct-80b        # Qwen3-Instruct 80B
+#        sparkrun run qwen3-coder-next-fp8      # Qwen3-Coder-Next FP8
+#        sparkrun run glm-4.7-flash-awq         # GLM-4.7-Flash AWQ (light)
+#        sparkrun run @spark-arena/<recipe-id>  # run directly from Spark Arena
 #
 #      Check status:  sparkrun status
 #      Attach logs:   sparkrun logs <recipe>
@@ -65,9 +67,10 @@ if [[ "$MODE" == "full" || "$MODE" == "core" ]]; then
     echo "  ⚠ WARNING: No inference model detected on port 8000."
     echo "  Start one with SparkRun before using Open WebUI or the RAG proxy:"
     echo ""
-    echo "    sparkrun run <recipe>"
-    echo "    e.g.  sparkrun run qwen3-30b-a3b"
-    echo "          sparkrun run nemotron-nano-30b"
+    echo "    sparkrun run <recipe-slug>"
+    echo "    e.g.  sparkrun run nemotron-3-nano-nvfp4"
+    echo "          sparkrun run qwen3-instruct-80b"
+    echo "          sparkrun run qwen3-coder-next-fp8"
     echo ""
     echo "  Check available recipes:  sparkrun list"
     echo "  Check status:             sparkrun status"
@@ -206,7 +209,7 @@ echo "  SearXNG             → http://localhost:8888"
 echo "  Langfuse            → (optional: docker compose -f core_services/langfuse.yml up -d)"
 echo ""
 echo "  Inference model     → managed by SparkRun (github.com/scitrera/sparkrun)"
-echo "                        sparkrun run <recipe>   e.g. qwen3-30b-a3b"
+echo "                        sparkrun run <recipe>   e.g. nemotron-3-nano-nvfp4"
 echo "                        sparkrun status         check what's running"
 echo "                        sparkrun list           browse recipes"
 echo "                        sparkrun stop <recipe>  stop a model"

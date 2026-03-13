@@ -98,8 +98,10 @@ or add models via the LiteLLM admin UI at `http://localhost:4000/ui`.
 The LLM is **not** managed by docker-compose.
 
 ```bash
-# github.com/scitrera/oss-spark-run
-sparkrun start <model-name>    # starts vLLM on port 8000
+# github.com/scitrera/sparkrun  |  spark-arena.com
+sparkrun run <recipe-slug>    # starts vLLM on port 8000
+# e.g. sparkrun run nemotron-3-nano-nvfp4
+# Browse: sparkrun list   Search: sparkrun search <term>
 ```
 
 Set `VLLM_MODEL_NAME` to match whatever model you load.
