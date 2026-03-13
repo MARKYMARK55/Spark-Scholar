@@ -6,7 +6,11 @@ Full-text PDF ingestion with automatic classification.
 
 Pipeline
 --------
-1. Extract text from each PDF using PyMuPDF (fitz), with unstructured as fallback
+1. Extract text from each PDF using a three-tier extractor cascade:
+     - Tier 1: docling (IBM, Apache 2.0) — best for multi-column academic layouts,
+               tables, and figures
+     - Tier 2: PyMuPDF (fitz) — fast and reliable for straightforward PDFs
+     - Tier 3: unstructured — OCR-capable fallback for scanned / complex PDFs
 2. Split text into overlapping chunks using tiktoken (cl100k_base)
 3. Embed all chunks with BGE-M3 dense + sparse
 4. Cluster chunks with HDBSCAN + UMAP to auto-detect topics
@@ -36,7 +40,7 @@ Usage
 
 Requirements
 ------------
-    pip install pymupdf unstructured tiktoken hdbscan umap-learn scikit-learn tqdm httpx qdrant-client
+    pip install docling pymupdf unstructured tiktoken hdbscan umap-learn scikit-learn tqdm httpx qdrant-client
 """
 
 from __future__ import annotations
@@ -82,6 +86,72 @@ OWUI_FILES_COLLECTION = "open-webui_files"
 # ---------------------------------------------------------------------------
 # Text extraction
 # ---------------------------------------------------------------------------
+
+def extract_text_docling(pdf_path: str) -> tuple[list[dict], dict]:
+    """
+    Extract text from PDF using docling (IBM, Apache 2.0).
+
+    Docling understands multi-column academic layouts, tables, and figures
+    better than raw text-order extractors, making it the preferred tier-1
+    parser for scientific PDFs.
+
+    Returns
+    -------
+    (pages, metadata)
+        pages: list of {"page_num": int, "text": str}
+        metadata: dict with title, authors, year
+    """
+    from docling.document_converter import DocumentConverter
+    from docling.datamodel.base_models import ItemLabel
+
+    try:
+        # TableItem is needed for table-aware export; import defensively
+        from docling.datamodel.document import TableItem
+    except ImportError:
+        TableItem = None
+
+    result = DocumentConverter().convert(pdf_path)
+
+    # Group text items by page number
+    page_texts: dict[int, list[str]] = {}
+    for item in result.document.texts:
+        # Each item carries provenance; use the first prov entry for page_no
+        page_no = 1
+        if item.prov and len(item.prov) > 0:
+            page_no = item.prov[0].page_no
+
+        if TableItem is not None and isinstance(item, TableItem):
+            try:
+                text = item.export_to_dataframe().to_string()
+            except Exception:
+                text = str(item)
+        else:
+            text = str(item)
+
+        text = text.strip()
+        if text:
+            page_texts.setdefault(page_no, []).append(text)
+
+    pages = [
+        {"page_num": pn, "text": "\n".join(texts)}
+        for pn, texts in sorted(page_texts.items())
+    ]
+
+    # Reject near-empty extractions so callers can fall through
+    total_chars = sum(len(p["text"]) for p in pages)
+    if total_chars < 200:
+        return [], {}
+
+    # Extract document-level metadata
+    title = getattr(result.document, "name", "") or ""
+
+    metadata: dict = {
+        "title": title,
+        "authors": "",
+        "year": None,
+    }
+    return pages, metadata
+
 
 def extract_text_pymupdf(pdf_path: str) -> tuple[list[dict], dict]:
     """
@@ -153,25 +223,36 @@ def extract_text_unstructured(pdf_path: str) -> tuple[list[dict], dict]:
 
 
 def extract_text(pdf_path: str) -> tuple[list[dict], dict]:
-    """Extract text using PyMuPDF with unstructured fallback."""
+    """
+    Extract text using a three-tier cascade:
+      1. docling  — best for multi-column academic layouts + tables/figures
+      2. PyMuPDF  — fast and reliable for straightforward PDFs
+      3. unstructured — OCR-capable last-resort fallback
+    """
+    # 1. Try docling (best for multi-column academic layouts + tables)
+    try:
+        pages, meta = extract_text_docling(pdf_path)
+        if sum(len(p["text"]) for p in pages) >= 200:
+            return pages, meta
+        logger.info("docling low yield, falling back to PyMuPDF")
+    except Exception as exc:
+        logger.info("docling failed (%s), falling back to PyMuPDF", exc)
+
+    # 2. PyMuPDF
     try:
         pages, meta = extract_text_pymupdf(pdf_path)
-        total_chars = sum(len(p["text"]) for p in pages)
-        if total_chars < 500:
-            # Very little text extracted — try unstructured
-            logger.info("Low text yield from PyMuPDF (%d chars), trying unstructured...", total_chars)
-            try:
-                pages, meta = extract_text_unstructured(pdf_path)
-            except Exception as unst_exc:
-                logger.warning("unstructured fallback failed: %s", unst_exc)
-        return pages, meta
+        if sum(len(p["text"]) for p in pages) >= 500:
+            return pages, meta
+        logger.info("Low text yield from PyMuPDF (%d chars), trying unstructured...", sum(len(p["text"]) for p in pages))
     except Exception as exc:
         logger.error("PyMuPDF extraction failed for %s: %s", pdf_path, exc)
-        try:
-            return extract_text_unstructured(pdf_path)
-        except Exception as unst_exc:
-            logger.error("Both extractors failed for %s: %s", pdf_path, unst_exc)
-            return [], {}
+
+    # 3. unstructured fallback
+    try:
+        return extract_text_unstructured(pdf_path)
+    except Exception as unst_exc:
+        logger.error("All extractors failed for %s: %s", pdf_path, unst_exc)
+        return [], {}
 
 
 # ---------------------------------------------------------------------------

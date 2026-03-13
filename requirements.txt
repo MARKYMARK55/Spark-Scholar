@@ -25,6 +25,9 @@ requests>=2.31.0
 # ── Caching ───────────────────────────────────────────────────────────────────
 redis>=5.0.0
 
+# ── Document parsing (05_ingest_pdfs.py) ──────────────────────────────────────
+docling>=2.0.0                 # tier-1 PDF parser — multi-column, tables, figures (IBM, Apache 2.0)
+
 # ── PDF ingestion (05_ingest_pdfs.py, 06_caption_figures.py) ─────────────────
 PyMuPDF>=1.24.0
 unstructured[pdf]>=0.14.0
@@ -48,3 +51,7 @@ python-dotenv>=1.0.0
 # ── Utilities ─────────────────────────────────────────────────────────────────
 tqdm>=4.66.0
 pydantic>=2.0.0
+
+# ── Answer quality evaluation (eval/answer_eval.py) ──────────────────────────
+ragas>=0.1.0                   # faithfulness, answer_relevancy, context_precision
+langchain-openai>=0.1.0        # RAGAS LLM wrapper pointing at LiteLLM proxy
