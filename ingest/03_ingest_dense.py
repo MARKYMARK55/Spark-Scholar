@@ -4,20 +4,20 @@ ingest/03_ingest_dense.py
 =========================
 Dense-embed arXiv abstracts with BGE-M3 (via vLLM) and upsert into Qdrant.
 
-Reads from data/arxiv_with_abstract.jsonl (created by 01_download_arxiv.py),
+Reads from ~/RAG/arxiv/arxiv_with_abstract.jsonl (created by 01_download_arxiv.py),
 routes each paper to its collection, embeds in batches, and upserts.
 
 Features
 --------
 - Configurable batch size (default 256 — tune to your GPU VRAM)
-- Resume support: tracks progress in data/dense_progress.txt
+- Resume support: tracks progress in ~/RAG/arxiv/arxiv_with_abstract_dense_progress.txt
 - Parallel batches: embeds the next batch while upserting the current one
 - tqdm progress bar with throughput stats
 
 Usage
 -----
     python ingest/03_ingest_dense.py
-    python ingest/03_ingest_dense.py --input data/arxiv_with_abstract.jsonl \
+    python ingest/03_ingest_dense.py --input ~/RAG/arxiv/arxiv_with_abstract.jsonl \
                                      --batch-size 128 \
                                      --collection arxiv-cs-ml-ai
 
@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 QDRANT_API_KEY = os.environ.get("QDRANT_API_KEY") or None
-DEFAULT_INPUT = os.path.join(os.path.dirname(__file__), "../data/arxiv_with_abstract.jsonl")
+DEFAULT_INPUT = os.path.expanduser("~/RAG/arxiv/arxiv_with_abstract.jsonl")
 DEFAULT_BATCH_SIZE = 256
 DENSE_VECTOR_NAME = "dense_embedding"
 
@@ -271,7 +271,7 @@ def main():
     parser.add_argument(
         "--input",
         default=DEFAULT_INPUT,
-        help="Path to JSONL input file (default: data/arxiv_with_abstract.jsonl)",
+        help="Path to JSONL input file (default: ~/RAG/arxiv/arxiv_with_abstract.jsonl)",
     )
     parser.add_argument(
         "--batch-size",

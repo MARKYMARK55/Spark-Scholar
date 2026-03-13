@@ -15,7 +15,7 @@ BGE_M3_SPARSE_URL and accepts POST /encode with {"texts": [...]}.
 Usage
 -----
     python ingest/04_ingest_sparse.py
-    python ingest/04_ingest_sparse.py --input data/arxiv_with_abstract.jsonl \
+    python ingest/04_ingest_sparse.py --input ~/RAG/arxiv/arxiv_with_abstract.jsonl \
                                        --batch-size 64 \
                                        --collection arxiv-cs-ml-ai
 
@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 QDRANT_API_KEY = os.environ.get("QDRANT_API_KEY") or None
-DEFAULT_INPUT = os.path.join(os.path.dirname(__file__), "../data/arxiv_with_abstract.jsonl")
+DEFAULT_INPUT = os.path.expanduser("~/RAG/arxiv/arxiv_with_abstract.jsonl")
 DEFAULT_BATCH_SIZE = 64
 SPARSE_VECTOR_NAME = "sparse_text"
 
