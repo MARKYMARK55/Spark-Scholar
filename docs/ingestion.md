@@ -45,8 +45,8 @@ Both pipelines write into the same Qdrant collections and are searched simultane
 Run once before any ingestion:
 
 ```bash
-python ingest/02_create_collections.py                    # all 22 collections
-python ingest/02_create_collections.py --arxiv-only       # 14 arXiv only
+python ingest/02_create_collections.py                    # all 24 collections
+python ingest/02_create_collections.py --arxiv-only       # 16 arXiv only
 python ingest/02_create_collections.py --docs-only        # 8 docs only
 python ingest/02_create_collections.py --collection docs-rust   # one at a time
 python ingest/02_create_collections.py --verify-only      # check what exists
@@ -461,7 +461,7 @@ Measured on DGX Spark (Grace Blackwell, 128 GB unified memory):
 | Stage | Scope | Throughput | Wall time |
 |---|---|---|---|
 | Download arXiv metadata | 2.96M papers | ~1,300/s (network) | ~40 min |
-| Create 22 Qdrant collections | — | instant | ~30 sec |
+| Create 24 Qdrant collections | — | instant | ~30 sec |
 | Dense embed + upsert *(indexing mode, 50% GPU)* | 2.96M abstracts | ~1,100 docs/s | ~18–22 hrs |
 | Sparse embed + upsert | 2.96M abstracts | ~1,400–1,600 docs/s | ~6–8 hrs |
 | Dense + sparse **in parallel** | 2.96M abstracts | limited by dense | **~18–22 hrs total** |

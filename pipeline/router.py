@@ -27,13 +27,19 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 CATEGORY_ROUTING: dict[str, str] = {
-    # CS — ML / AI / Vision / NLP
+    # CS — ML / AI core
     "cs.ai": "arxiv-cs-ml-ai",
     "cs.lg": "arxiv-cs-ml-ai",
     "cs.ne": "arxiv-cs-ml-ai",
-    "cs.cv": "arxiv-cs-ml-ai",
-    "cs.cl": "arxiv-cs-ml-ai",
-    "cs.ir": "arxiv-cs-ml-ai",
+    "cs.ma": "arxiv-cs-ml-ai",       # Multiagent Systems
+    # CS — Computer Vision
+    "cs.cv": "arxiv-cs-cv",
+    "cs.gr": "arxiv-cs-cv",          # Graphics (visual computing)
+    "cs.mm": "arxiv-cs-cv",          # Multimedia
+    # CS — NLP / Information Retrieval
+    "cs.cl": "arxiv-cs-nlp-ir",
+    "cs.ir": "arxiv-cs-nlp-ir",
+    "cs.sd": "arxiv-cs-nlp-ir",      # Sound (speech/audio processing)
     # CS — Systems / Theory
     "cs.ds": "arxiv-cs-systems-theory",
     "cs.cc": "arxiv-cs-systems-theory",
@@ -43,18 +49,62 @@ CATEGORY_ROUTING: dict[str, str] = {
     "cs.se": "arxiv-cs-systems-theory",
     "cs.ni": "arxiv-cs-systems-theory",
     "cs.cr": "arxiv-cs-systems-theory",
+    "cs.ar": "arxiv-cs-systems-theory",  # Hardware Architecture
+    "cs.cg": "arxiv-cs-systems-theory",  # Computational Geometry
+    "cs.db": "arxiv-cs-systems-theory",  # Databases
+    "cs.dm": "arxiv-cs-systems-theory",  # Discrete Mathematics
+    "cs.et": "arxiv-cs-systems-theory",  # Emerging Technologies
+    "cs.fl": "arxiv-cs-systems-theory",  # Formal Languages
+    "cs.gt": "arxiv-cs-systems-theory",  # Game Theory (CS)
+    "cs.it": "arxiv-cs-systems-theory",  # Information Theory
+    "cs.lo": "arxiv-cs-systems-theory",  # Logic in CS
+    "cs.ms": "arxiv-cs-systems-theory",  # Mathematical Software
+    "cs.na": "arxiv-cs-systems-theory",  # Numerical Analysis (CS)
+    "cs.pf": "arxiv-cs-systems-theory",  # Performance
+    "cs.sc": "arxiv-cs-systems-theory",  # Symbolic Computation
+    "cs.sy": "arxiv-cs-systems-theory",  # Systems and Control
+    # CS — Misc (interdisciplinary / applied)
+    "cs.ce": "arxiv-misc",           # Computational Engineering
+    "cs.cy": "arxiv-misc",           # Computers and Society
+    "cs.dl": "arxiv-misc",           # Digital Libraries
+    "cs.gl": "arxiv-misc",           # General Literature
+    "cs.hc": "arxiv-misc",           # Human-Computer Interaction
+    "cs.oh": "arxiv-misc",           # Other CS
+    "cs.ro": "arxiv-misc",           # Robotics
+    "cs.si": "arxiv-misc",           # Social and Information Networks
     # Math — Pure
     "math.ag": "arxiv-math-pure",
     "math.nt": "arxiv-math-pure",
     "math.gr": "arxiv-math-pure",
     "math.gt": "arxiv-math-pure",
     "math.at": "arxiv-math-pure",
+    "math.ac": "arxiv-math-pure",    # Commutative Algebra
+    "math.ct": "arxiv-math-pure",    # Category Theory
+    "math.cv": "arxiv-math-pure",    # Complex Variables
+    "math.dg": "arxiv-math-pure",    # Differential Geometry
+    "math.fa": "arxiv-math-pure",    # Functional Analysis
+    "math.gm": "arxiv-math-pure",    # General Mathematics
+    "math.gn": "arxiv-math-pure",    # General Topology
+    "math.ho": "arxiv-math-pure",    # History and Overview
+    "math.kt": "arxiv-math-pure",    # K-Theory and Homology
+    "math.lo": "arxiv-math-pure",    # Logic
+    "math.mg": "arxiv-math-pure",    # Metric Geometry
+    "math.oa": "arxiv-math-pure",    # Operator Algebras
+    "math.qa": "arxiv-math-pure",    # Quantum Algebra
+    "math.ra": "arxiv-math-pure",    # Rings and Algebras
+    "math.rt": "arxiv-math-pure",    # Representation Theory
+    "math.sg": "arxiv-math-pure",    # Symplectic Geometry
     # Math — Applied
     "math.oc": "arxiv-math-applied",
     "math.na": "arxiv-math-applied",
     "math.co": "arxiv-math-applied",
     "math.pr": "arxiv-math-applied",
     "math.st": "arxiv-math-applied",
+    "math.ap": "arxiv-math-applied",  # Analysis of PDEs
+    "math.ca": "arxiv-math-applied",  # Classical Analysis and ODEs
+    "math.ds": "arxiv-math-applied",  # Dynamical Systems
+    "math.it": "arxiv-math-applied",  # Information Theory (math side)
+    "math.sp": "arxiv-math-applied",  # Spectral Theory
     # Math-Physics
     "math-ph": "arxiv-math-phys",
     "math.mp": "arxiv-math-phys",
@@ -62,8 +112,13 @@ CATEGORY_ROUTING: dict[str, str] = {
     "stat.ml": "arxiv-stat-eess",
     "stat.me": "arxiv-stat-eess",
     "stat.th": "arxiv-stat-eess",
+    "stat.ap": "arxiv-stat-eess",    # Applications
+    "stat.co": "arxiv-stat-eess",    # Computation
+    "stat.ot": "arxiv-stat-eess",    # Other Statistics
     "eess.sp": "arxiv-stat-eess",
     "eess.sy": "arxiv-stat-eess",
+    "eess.as": "arxiv-stat-eess",    # Audio and Speech Processing
+    "eess.iv": "arxiv-stat-eess",    # Image and Video Processing
     # Quantum / GR
     "quant-ph": "arxiv-quantph-grqc",
     "gr-qc": "arxiv-quantph-grqc",
@@ -81,6 +136,25 @@ CATEGORY_ROUTING: dict[str, str] = {
     "nucl-ex": "arxiv-nucl-nlin-physother",
     "nlin": "arxiv-nucl-nlin-physother",
     "physics": "arxiv-nucl-nlin-physother",
+    # Legacy arXiv categories (pre-2007 naming)
+    "dg-ga": "arxiv-math-pure",      # Differential Geometry (old)
+    "alg-geom": "arxiv-math-pure",   # Algebraic Geometry (old)
+    "funct-an": "arxiv-math-pure",   # Functional Analysis (old)
+    "q-alg": "arxiv-math-pure",      # Quantum Algebra (old)
+    "solv-int": "arxiv-math-phys",   # Solvable/Integrable (old)
+    "chao-dyn": "arxiv-nucl-nlin-physother",  # Chaotic Dynamics (old)
+    "patt-sol": "arxiv-nucl-nlin-physother",  # Pattern Formation (old)
+    "comp-gas": "arxiv-nucl-nlin-physother",  # Cellular Automata (old)
+    "adap-org": "arxiv-nucl-nlin-physother",  # Adaptation (old)
+    "ao-sci": "arxiv-nucl-nlin-physother",    # Atmospheric (old)
+    "atom-ph": "arxiv-nucl-nlin-physother",   # Atomic Physics (old)
+    "bayes-an": "arxiv-stat-eess",   # Bayesian Analysis (old)
+    "chem-ph": "arxiv-nucl-nlin-physother",   # Chemical Physics (old)
+    "cmp-lg": "arxiv-cs-nlp-ir",     # Computation and Language (old)
+    "mtrl-th": "arxiv-condmat",      # Materials Theory (old)
+    "supr-con": "arxiv-condmat",     # Superconductivity (old)
+    "acc-phys": "arxiv-nucl-nlin-physother",  # Accelerator Physics (old)
+    "plasm-ph": "arxiv-nucl-nlin-physother",  # Plasma Physics (old)
     # Quantitative Biology / Finance / Economics
     "q-bio": "arxiv-qbio-qfin-econ",
     "q-fin": "arxiv-qbio-qfin-econ",
@@ -90,6 +164,8 @@ CATEGORY_ROUTING: dict[str, str] = {
 ALL_COLLECTIONS: list[str] = [
     "arXiv",
     "arxiv-cs-ml-ai",
+    "arxiv-cs-cv",
+    "arxiv-cs-nlp-ir",
     "arxiv-condmat",
     "arxiv-astro",
     "arxiv-hep",
@@ -110,37 +186,55 @@ ALL_COLLECTIONS: list[str] = [
 # ---------------------------------------------------------------------------
 
 DOMAIN_KEYWORDS: dict[str, list[tuple[str, float]]] = {
-    # ML / AI / NLP / Vision
-    "transformer": [("arxiv-cs-ml-ai", 2.0)],
+    # ML / AI core
+    "transformer": [("arxiv-cs-ml-ai", 2.0), ("arxiv-cs-nlp-ir", 1.0)],
     "attention mechanism": [("arxiv-cs-ml-ai", 2.0)],
     "neural network": [("arxiv-cs-ml-ai", 1.5)],
-    "deep learning": [("arxiv-cs-ml-ai", 2.0)],
+    "deep learning": [("arxiv-cs-ml-ai", 2.0), ("arxiv-cs-cv", 0.5)],
     "machine learning": [("arxiv-cs-ml-ai", 1.5)],
-    "large language model": [("arxiv-cs-ml-ai", 2.0)],
-    "llm": [("arxiv-cs-ml-ai", 2.0)],
-    "gpt": [("arxiv-cs-ml-ai", 1.5)],
-    "bert": [("arxiv-cs-ml-ai", 1.5)],
-    "fine.?tun": [("arxiv-cs-ml-ai", 1.5)],
     "reinforcement learning": [("arxiv-cs-ml-ai", 1.5)],
     "rlhf": [("arxiv-cs-ml-ai", 2.0)],
-    "diffusion model": [("arxiv-cs-ml-ai", 2.0), ("arxiv-condmat", 0.5)],
     "generative model": [("arxiv-cs-ml-ai", 1.5)],
-    "image classification": [("arxiv-cs-ml-ai", 1.5)],
-    "object detection": [("arxiv-cs-ml-ai", 1.5)],
-    "computer vision": [("arxiv-cs-ml-ai", 1.5)],
-    "natural language": [("arxiv-cs-ml-ai", 1.5)],
-    "embedding": [("arxiv-cs-ml-ai", 1.0)],
-    "retrieval augmented": [("arxiv-cs-ml-ai", 2.0)],
-    "rag": [("arxiv-cs-ml-ai", 1.5)],
-    "knowledge graph": [("arxiv-cs-ml-ai", 1.0)],
     "graph neural": [("arxiv-cs-ml-ai", 1.5)],
-    "contrastive learning": [("arxiv-cs-ml-ai", 1.5)],
-    "self.?supervised": [("arxiv-cs-ml-ai", 1.5)],
-    "zero.?shot": [("arxiv-cs-ml-ai", 1.5)],
-    "few.?shot": [("arxiv-cs-ml-ai", 1.5)],
-    "prompt": [("arxiv-cs-ml-ai", 1.0)],
-    "token": [("arxiv-cs-ml-ai", 0.5)],
+    "contrastive learning": [("arxiv-cs-ml-ai", 1.5), ("arxiv-cs-cv", 0.5)],
+    "self.?supervised": [("arxiv-cs-ml-ai", 1.5), ("arxiv-cs-cv", 0.5)],
+    "fine.?tun": [("arxiv-cs-ml-ai", 1.5)],
     "inference": [("arxiv-cs-ml-ai", 0.5)],
+    # Computer Vision
+    "image classification": [("arxiv-cs-cv", 2.0)],
+    "object detection": [("arxiv-cs-cv", 2.0)],
+    "computer vision": [("arxiv-cs-cv", 2.0)],
+    "image segmentation": [("arxiv-cs-cv", 2.0)],
+    "image generation": [("arxiv-cs-cv", 2.0)],
+    "video understanding": [("arxiv-cs-cv", 2.0)],
+    "point cloud": [("arxiv-cs-cv", 2.0)],
+    "3d reconstruction": [("arxiv-cs-cv", 2.0)],
+    "optical flow": [("arxiv-cs-cv", 2.0)],
+    "face recognition": [("arxiv-cs-cv", 2.0)],
+    "pose estimation": [("arxiv-cs-cv", 2.0)],
+    "diffusion model": [("arxiv-cs-cv", 1.5), ("arxiv-cs-ml-ai", 1.0), ("arxiv-condmat", 0.5)],
+    "zero.?shot": [("arxiv-cs-cv", 1.0), ("arxiv-cs-ml-ai", 1.0), ("arxiv-cs-nlp-ir", 0.5)],
+    "few.?shot": [("arxiv-cs-ml-ai", 1.5), ("arxiv-cs-cv", 0.5)],
+    # NLP / Information Retrieval
+    "large language model": [("arxiv-cs-nlp-ir", 2.0), ("arxiv-cs-ml-ai", 1.0)],
+    "llm": [("arxiv-cs-nlp-ir", 2.0), ("arxiv-cs-ml-ai", 1.0)],
+    "gpt": [("arxiv-cs-nlp-ir", 1.5), ("arxiv-cs-ml-ai", 0.5)],
+    "bert": [("arxiv-cs-nlp-ir", 1.5)],
+    "natural language": [("arxiv-cs-nlp-ir", 2.0)],
+    "embedding": [("arxiv-cs-nlp-ir", 1.0), ("arxiv-cs-ml-ai", 0.5)],
+    "retrieval augmented": [("arxiv-cs-nlp-ir", 2.0)],
+    "rag": [("arxiv-cs-nlp-ir", 1.5)],
+    "knowledge graph": [("arxiv-cs-nlp-ir", 1.0), ("arxiv-cs-ml-ai", 0.5)],
+    "prompt": [("arxiv-cs-nlp-ir", 1.0), ("arxiv-cs-ml-ai", 0.5)],
+    "token": [("arxiv-cs-nlp-ir", 0.5)],
+    "sentiment": [("arxiv-cs-nlp-ir", 2.0)],
+    "machine translation": [("arxiv-cs-nlp-ir", 2.0)],
+    "question answering": [("arxiv-cs-nlp-ir", 2.0)],
+    "text generation": [("arxiv-cs-nlp-ir", 2.0)],
+    "named entity": [("arxiv-cs-nlp-ir", 2.0)],
+    "information retrieval": [("arxiv-cs-nlp-ir", 2.0)],
+    "search engine": [("arxiv-cs-nlp-ir", 2.0)],
+    "document retrieval": [("arxiv-cs-nlp-ir", 2.0)],
     # CS Systems / Theory
     "distributed": [("arxiv-cs-systems-theory", 1.5)],
     "consensus": [("arxiv-cs-systems-theory", 1.5)],
@@ -155,7 +249,7 @@ DOMAIN_KEYWORDS: dict[str, list[tuple[str, float]]] = {
     "fault tolerance": [("arxiv-cs-systems-theory", 1.5)],
     "cache": [("arxiv-cs-systems-theory", 1.0)],
     "parallel computing": [("arxiv-cs-systems-theory", 1.5)],
-    "gpu": [("arxiv-cs-systems-theory", 1.0), ("arxiv-cs-ml-ai", 0.5)],
+    "gpu": [("arxiv-cs-systems-theory", 1.0), ("arxiv-cs-ml-ai", 0.5), ("arxiv-cs-cv", 0.5)],
     # Quantum / GR
     "quantum": [("arxiv-quantph-grqc", 2.0)],
     "qubit": [("arxiv-quantph-grqc", 2.0)],
@@ -236,7 +330,7 @@ DOMAIN_KEYWORDS: dict[str, list[tuple[str, float]]] = {
     "prime": [("arxiv-math-pure", 1.0)],
     "moduli": [("arxiv-math-pure", 1.5)],
     # Math — Applied
-    "optimization": [("arxiv-math-applied", 1.5), ("arxiv-cs-ml-ai", 0.5)],
+    "optimization": [("arxiv-math-applied", 1.5), ("arxiv-cs-ml-ai", 0.5), ("arxiv-cs-cv", 0.3)],
     "numerical method": [("arxiv-math-applied", 2.0)],
     "combinatorics": [("arxiv-math-applied", 1.5)],
     "probability": [("arxiv-math-applied", 1.5)],
@@ -408,6 +502,9 @@ if __name__ == "__main__":
         "Algebraic geometry and Hodge theory",
         "Protein folding with deep learning",
         "Random query about nothing specific",
+        "Object detection in autonomous driving with LiDAR point clouds",
+        "Large language model alignment and RLHF fine-tuning",
+        "Information retrieval and document ranking with dense embeddings",
     ]
 
     print("=== route_query ===")

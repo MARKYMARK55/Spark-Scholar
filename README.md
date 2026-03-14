@@ -1,377 +1,328 @@
-# spark-scholar
+# Spark-Scholar
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
-[![Docker](https://img.shields.io/badge/docker-compose-blue)](https://docs.docker.com/compose/)
-[![Hardware: DGX Spark](https://img.shields.io/badge/hardware-DGX%20Spark-76b900)](https://www.nvidia.com/en-us/products/workstations/dgx-spark/)
+Self-hosted academic research platform with hybrid vector search across 3.08 million arXiv papers, custom document ingestion, and 20+ live academic API tools. Built on NVIDIA DGX Spark but runs on any machine with Docker.
 
-Self-hosted research knowledge base for DGX Spark with three ingestion paths:
-**2.96M arXiv abstracts** indexed by topic, **custom PDF chunking and embedding**
-via BGE-M3 dense+sparse hybrid, and **dynamic corpus expansion** using Semantic
-Scholar / AI2 to auto-fetch L1→L2→L3 citation graphs — all queryable through
-Open WebUI tools with cross-encoder reranking and a LangGraph orchestration
-pipeline.
+## Three Independent Modules
 
-**GitHub:** https://github.com/MARKYMARK55/spark-scholar
-**License:** MIT
+Deploy any combination. Each module works on its own or alongside the others.
 
----
+| arXiv Search | Document Ingestion | Academic Tools |
+|---|---|---|
+| 3.08M papers pre-indexed with BGE-M3 dense + sparse vectors | Add your own PDFs, web docs, and papers into the same search infrastructure | 20+ Open WebUI tools for live searches across 500M+ scholarly records |
+| 15 domain-specific Qdrant collections | 3-tier text extraction, auto-topic classification, citation graph expansion | Semantic Scholar, OpenAlex, PubMed, CORE, Ai2 Asta, and more |
+| 9ms hybrid search via RRF fusion | Each folder creates its own searchable collection | Install only the tools you need — no Qdrant required |
+| [Pre-built snapshots on HuggingFace](https://huggingface.co/datasets/MARKYMARK55/spark-scholar-arxiv-snapshots) skip 24h of GPU embedding | 8 pre-configured doc collections (Python, Rust, JS, Docker, etc.) | Callable by the model during chat inference |
 
-## Who Is This For?
+The pipeline **auto-detects available collections** from Qdrant. Restore three arXiv collections and it searches those three. Ingest PDFs later and they appear alongside arXiv automatically. Academic Tools are independent — install whichever tool JSONs you want into Open WebUI.
 
-Spark-Scholar is built for researchers and engineers who want a **fully self-hosted, GPU-accelerated academic assistant** — no cloud API bills, no data leaving your machine, no rate limits.
+## Choose Your Approach
 
-| You should use this if… | You might not need this if… |
-|---|---|
-| You have a DGX Spark (128 GB unified memory) or similar high-VRAM machine | You just want a quick hosted RAG demo |
-| You query arXiv-scale corpora (millions of papers) | Your corpus is a few hundred PDFs |
-| You need reproducible, source-grounded answers with citation trails | You're fine with a general-purpose chatbot |
-| You want to run Qwen3-80B / Nemotron-H locally, not pay for GPT-4 | You don't want to manage Docker + vLLM |
-| You're building research infrastructure others in your lab will use | You're a solo user who just wants Zotero + ChatGPT |
+Modules and usage modes are independently combinable. Pick what fits your needs:
 
-**Minimum viable hardware:** 64 GB VRAM (single GPU or unified memory). The full arXiv index (2.96M abstracts) requires ~80 GB disk and 18–22 hrs of initial embedding time; everything else starts in minutes.
+### Open WebUI + Dense Search (Simplest)
 
----
+Use Open WebUI's built-in RAG with the dense embedder (port 8025) and optionally the cross-encoder reranker (port 8020). No sparse vectors, no LangGraph needed. Minimal setup, good enough for many use cases.
 
-## Index
+### Full Hybrid Pipeline (LangGraph + RAG Proxy)
 
-### 🚀 Getting Started
-| Section | Location |
-|---|---|
-| Hardware & software prerequisites | [docs/getting_started.md → Prerequisites](docs/getting_started.md#prerequisites) |
-| Setting up `env/.env` | [docs/getting_started.md → Configuration](docs/getting_started.md#configuration) |
-| Environment variable reference (all vars) | [docs/getting_started.md → Env reference](docs/getting_started.md#environment-variable-reference) |
-| Start the full stack (`start_stack.sh`) | [docs/getting_started.md → Startup Order](docs/getting_started.md#startup-order) |
-| Manual step-by-step startup | [docs/getting_started.md → Manual startup](docs/getting_started.md#manual-startup-step-by-step) |
-| Switch to indexing mode (50% GPU) | [docs/getting_started.md → Indexing mode](docs/getting_started.md#switching-to-indexing-mode) |
-| Service port map | [README → Port Map](#service-port-map) |
-
-### 🧠 Models & Inference
-| Section | Location |
-|---|---|
-| SparkRun — managing vLLM inference | [docs/getting_started.md → SparkRun](docs/getting_started.md#sparkrun-required--manages-vllm-inference) |
-| BGE-M3 dense embedder (port 8025) | [docs/getting_started.md → Dense Embedder](docs/getting_started.md#dense-embedder-port-8025) |
-| BGE-M3 sparse embedder (port 8035) | [docs/getting_started.md → Sparse Embedder](docs/getting_started.md#sparse-embedder-port-8035) |
-| BGE-M3 cross-encoder reranker (port 8020) | [docs/getting_started.md → Reranker](docs/getting_started.md#reranker-port-8020) |
-| VRAM budget table (all services) | [docs/getting_started.md → VRAM Budget](docs/getting_started.md#vram-budget-dgx-spark--128-gb-unified-memory) |
-| LiteLLM proxy — config & key pattern | [docs/getting_started.md → LiteLLM Setup](docs/getting_started.md#litellm-setup) |
-| Phi Mini — secondary lightweight model | [docs/getting_started.md → Phi Mini](docs/getting_started.md#phi-mini--secondary-lightweight-model) |
-| Adding cloud models (OpenAI, Anthropic…) | [docs/ui_interfaces.md → LiteLLM Admin](docs/ui_interfaces.md#3--litellm-admin-ui--httplocalhost4000ui) |
-| Cloud model reference YAML | [core_services/litellm_cloud.yaml](core_services/litellm_cloud.yaml) |
-
-### 📥 Ingestion Pipeline
-| Section | Location |
-|---|---|
-| Pipeline overview (arXiv vs custom corpus) | [docs/ingestion.md → Overview](docs/ingestion.md#overview) |
-| Step 0 — Create Qdrant collections (22 total) | [docs/ingestion.md → Step 0](docs/ingestion.md#step-0-create-qdrant-collections) |
-| Step 1 — Download arXiv metadata (2.96M papers) | [docs/ingestion.md → Step 1](docs/ingestion.md#step-1-download-arxiv-metadata) |
-| Step 2 — Dense embed + index (arXiv abstracts) | [docs/ingestion.md → Step 2](docs/ingestion.md#step-2-dense-embedding--indexing) |
-| Step 3 — Sparse embed + index (arXiv abstracts) | [docs/ingestion.md → Step 3](docs/ingestion.md#step-3-sparse-embedding--indexing) |
-| Step 4 — PDF ingest + HDBSCAN auto-classify | [docs/ingestion.md → Step 4](docs/ingestion.md#step-4-pdf-ingestion-your-own-documents) |
-| Step 5 — Figure captioning (vision model) | [docs/ingestion.md → Step 5](docs/ingestion.md#step-5-figure-captioning) |
-| Step 6 — HTML / web documentation crawler | [docs/ingestion.md → Step 6](docs/ingestion.md#step-6-web--html-documentation-ingestion) |
-| Step 7 — Citation graph expansion (L2/L3) | [docs/ingestion.md → Step 7](docs/ingestion.md#step-7-citation-graph-expansion-l2--l3) |
-| HDBSCAN auto-classification pipeline explained | [docs/ingestion.md → What pipeline does](docs/ingestion.md#what-the-python-pipeline-does) |
-| Documentation collections (8 docs-* collections) | [docs/ingestion.md → Collections table](docs/ingestion.md#documentation-collections) |
-| Per-language ingest commands (Rust/Python/JS/Docker/Anthropic/AppleScript/DevOps) | [docs/ingestion.md → Step 6](docs/ingestion.md#step-6-web--html-documentation-ingestion) |
-| Keeping the index fresh (re-ingest, recreate) | [docs/ingestion.md → Freshness](docs/ingestion.md#keeping-the-index-fresh) |
-| Browsing collections in Open WebUI | [docs/ingestion.md → Browsing](docs/ingestion.md#browsing-your-collections-in-open-webui) |
-| Ingestion timing table | [docs/ingestion.md → Timing](docs/ingestion.md#timing-table) |
-| Throughput benchmarks & VRAM tuning | [docs/embedding_speed.md](docs/embedding_speed.md) |
-
-### 🔍 Search & Retrieval
-| Section | Location |
-|---|---|
-| Dense search CLI (`query/dense_search.py`) | [docs/search_retrieval.md → Dense search](docs/search_retrieval.md#dense-search--semantic-similarity) |
-| Sparse search CLI (`query/sparse_search.py`) | [docs/search_retrieval.md → Sparse search](docs/search_retrieval.md#sparse-search--keyword-precision) |
-| Hybrid search CLI — full pipeline (recommended) | [docs/search_retrieval.md → Hybrid search](docs/search_retrieval.md#hybrid-search--full-pipeline-recommended) |
-| Comparing all three modes side-by-side | [docs/search_retrieval.md → Comparison](docs/search_retrieval.md#comparing-all-three-modes) |
-| Why hybrid beats dense or sparse alone | [docs/search_retrieval.md → Why hybrid](docs/search_retrieval.md#why-hybrid) |
-| Qdrant native RRF — Prefetch + FusionQuery | [docs/search_retrieval.md → Qdrant RRF](docs/search_retrieval.md#qdrants-native-rrf-implementation) |
-| Cross-encoder reranking (BGE-M3, top-50→top-10) | [docs/search_retrieval.md → Reranking](docs/search_retrieval.md#reranking) |
-| LangGraph pipeline — node graph + descriptions | [docs/search_retrieval.md → LangGraph](docs/search_retrieval.md#langgraph-pipeline) |
-| LangGraph conditional web search node | [docs/search_retrieval.md → Conditional edges](docs/search_retrieval.md#conditional-edges) |
-| Redis caching strategy + cache invalidation | [docs/search_retrieval.md → Caching](docs/search_retrieval.md#caching-strategy) |
-
-### 🖥 UI Interfaces
-| Section | Location |
-|---|---|
-| All UIs — quick reference table (ports + purpose) | [docs/ui_interfaces.md → Quick Reference](docs/ui_interfaces.md#quick-reference) |
-| Open WebUI — setup, RAG Path A vs B, connections | [docs/ui_interfaces.md → Open WebUI](docs/ui_interfaces.md#1--open-webui--httplocalhost8080) |
-| Qdrant Dashboard — browse collections, manual search | [docs/ui_interfaces.md → Qdrant](docs/ui_interfaces.md#2--qdrant-dashboard--httplocalhost6333dashboard) |
-| LiteLLM Admin — add models, API keys, spend tracking | [docs/ui_interfaces.md → LiteLLM Admin](docs/ui_interfaces.md#3--litellm-admin-ui--httplocalhost4000ui) |
-| Langflow — visual pipeline builder | [docs/ui_interfaces.md → Langflow](docs/ui_interfaces.md#4--langflow--httplocalhost7860) |
-| Langfuse — traces, spans, tuning workflow | [docs/ui_interfaces.md → Langfuse](docs/ui_interfaces.md#5--langfuse--httplocalhost3000) |
-| SearXNG — private web search, bang shortcuts | [docs/ui_interfaces.md → SearXNG](docs/ui_interfaces.md#6--searxng--httplocalhost8888) |
-| Redis/Valkey — CLI commands, RedisInsight | [docs/ui_interfaces.md → Redis](docs/ui_interfaces.md#7--redis--valkey--no-built-in-ui) |
-| Which UI for which task — decision table | [docs/ui_interfaces.md → Summary](docs/ui_interfaces.md#summary-which-ui-for-which-task) |
-
-### 🛠 Open WebUI Tools (Dynamic RAG)
-| Section | Location |
-|---|---|
-| How tools work — mechanism & tool vs RAG proxy | [docs/open_webui_tools.md → How tools work](docs/open_webui_tools.md#how-open-webui-tools-work) |
-| Installing & enabling tools | [docs/open_webui_tools.md → Installing](docs/open_webui_tools.md#installing-tools) |
-| Tool: arXiv paper search | [docs/open_webui_tools.md → arXiv Search](docs/open_webui_tools.md#core-tool-arxiv-paper-search) |
-| Tool: Semantic Scholar (citation counts, recommendations) | [docs/open_webui_tools.md → Semantic Scholar](docs/open_webui_tools.md#core-tool-semantic-scholar-search) |
-| Tool: Ingest PDF to corpus (live corpus expansion) | [docs/open_webui_tools.md → Ingest PDF](docs/open_webui_tools.md#core-tool-ingest-pdf-to-corpus) |
-| Tool: Query RAG corpus (targeted collection search) | [docs/open_webui_tools.md → RAG Search](docs/open_webui_tools.md#core-tool-query-the-rag-corpus) |
-| Tool: SearXNG web search | [docs/open_webui_tools.md → Web Search](docs/open_webui_tools.md#core-tool-web-search-via-searxng) |
-| Dynamic RAG workflow — model expands corpus on-the-fly | [docs/open_webui_tools.md → Dynamic RAG](docs/open_webui_tools.md#dynamic-rag-workflow) |
-| Suggested tool combinations (research / docs workflows) | [docs/open_webui_tools.md → Combinations](docs/open_webui_tools.md#suggested-tool-combinations) |
-| Corpus expansion strategies (chat / CLI / upload) | [docs/open_webui_tools.md → Expansion](docs/open_webui_tools.md#expanding-your-corpus--ingestion-strategies) |
-| Community tools hub + recommended installs | [docs/open_webui_tools.md → Community](docs/open_webui_tools.md#getting-community-tools) |
-| Debugging tools (not firing, verbose logs) | [docs/open_webui_tools.md → Debugging](docs/open_webui_tools.md#debugging-tools) |
-
-### 📊 Evaluation
-| Section | Location |
-|---|---|
-| Retrieval eval — Recall@k, MRR, nDCG@k | [eval/README.md](eval/README.md) |
-| QA dataset — 20 landmark ML/AI queries | [eval/qa_dataset.jsonl](eval/qa_dataset.jsonl) |
-| Compare dense / sparse / hybrid / hybrid+rerank | `python eval/retrieval_eval.py --mode all` |
-
-### 🔧 Troubleshooting & Reference
-| Section | Location |
-|---|---|
-| Qdrant returns 0 results | [docs/troubleshooting.md → Qdrant 0 results](docs/troubleshooting.md#qdrant-returns-0-results) |
-| BGE-M3 dense embedder not responding | [docs/troubleshooting.md → Dense not responding](docs/troubleshooting.md#bge-m3-dense-embedder-not-responding) |
-| Sparse embedder OOM | [docs/troubleshooting.md → Sparse OOM](docs/troubleshooting.md#sparse-embedder-oom) |
-| Redis connection refused | [docs/troubleshooting.md → Redis](docs/troubleshooting.md#redis-connection-refused) |
-| LLM returning very short responses | [docs/troubleshooting.md → Short responses](docs/troubleshooting.md#llm-returning-very-short-responses) |
-| RAG proxy embedding failed | [docs/troubleshooting.md → Embedding failed](docs/troubleshooting.md#rag-proxy-returns-embedding-failed) |
-| Open WebUI shows no models | [docs/troubleshooting.md → No models](docs/troubleshooting.md#open-webui-shows-no-models) |
-| Langfuse traces not appearing | [docs/troubleshooting.md → Langfuse](docs/troubleshooting.md#langfuse-traces-not-appearing) |
-| Dense ingestion is slow | [docs/troubleshooting.md → Slow ingestion](docs/troubleshooting.md#dense-ingestion-is-slow) |
-| Collection routing errors | [docs/troubleshooting.md → Routing](docs/troubleshooting.md#collection-routing-errors) |
-| LiteLLM DB connection error | [docs/troubleshooting.md → LiteLLM DB](docs/troubleshooting.md#litellm-fails-to-start-db-connection-error) |
-| Phi Mini not in model list | [docs/troubleshooting.md → Phi Mini](docs/troubleshooting.md#phi-mini-not-appearing-in-model-list) |
-| Known limitations | [docs/troubleshooting.md → Known Limitations](docs/troubleshooting.md#known-limitations) |
-| Repository structure | [README → Repository Structure](#repository-structure) |
-
----
-
-## Architecture
+Dense + sparse + RRF fusion + cross-encoder reranking, orchestrated by a LangGraph state machine. The RAG Proxy (port 8002) exposes an OpenAI-compatible `/v1/chat/completions` endpoint. Open WebUI or any OpenAI client connects to it. Includes automatic web search for time-sensitive queries, Redis caching, and Langfuse tracing.
 
 ```
-                        ┌─────────────────────────────────────────────────┐
-                        │                 DGX Spark                       │
-                        │                                                  │
-  User / Open WebUI     │  ┌──────────────┐    ┌───────────────────────┐  │
-  ──────────────────►   │  │  RAG Proxy   │    │    LiteLLM Proxy      │  │
-  POST /v1/chat/        │  │  (port 8002) │    │    (port 4000)        │  │
-  completions           │  └──────┬───────┘    └───────────┬───────────┘  │
-                        │         │                        │               │
-                        │  ┌──────▼───────────────────┐   │               │
-                        │  │   LangGraph Pipeline      │   │               │
-                        │  │                           │   │               │
-                        │  │  check_cache              │   │               │
-                        │  │       ↓                   │   │               │
-                        │  │  route_query              │   │               │
-                        │  │       ↓                   │   │               │
-                        │  │  embed_query ─────────────┼──►│ BGE-M3 Dense │
-                        │  │       │       ────────────┼──►│ BGE-M3 Sparse│
-                        │  │       ↓                   │   └──────────────┘
-                        │  │  hybrid_retrieve ─────────┼──────────────────►
-                        │  │       ↓             Qdrant│  (port 6333)      │
-                        │  │  [web_search] ────────────┼──► SearXNG        │
-                        │  │       ↓             (opt) │   (port 8888)     │
-                        │  │  merge_results            │                   │
-                        │  │       ↓                   │                   │
-                        │  │  rerank_results ──────────┼──► BGE Reranker   │
-                        │  │       ↓             cross-encoder (port 8020) │
-                        │  │  build_context            │                   │
-                        │  │       ↓                   │                   │
-                        │  │  llm_inference ───────────┼──► LiteLLM ──────►│
-                        │  │       ↓             (port 4000)    vLLM       │
-                        │  │  cache_result ────────────┼──► Redis          │
-                        │  │       ↓             (port 6379)               │
-                        │  │  trace_result ────────────┼──► Langfuse       │
-                        │  └───────────────────────────┘    (port 3000)    │
-                        └─────────────────────────────────────────────────┘
-
-  ┌──────────────────────────────────────────────────────────────────────┐
-  │             Qdrant Collections — 22 total (14 arXiv + 8 docs)        │
-  │                                                                      │
-  │  arXiv (catch-all)      arxiv-cs-ml-ai       arxiv-cs-systems-theory │
-  │  arxiv-condmat          arxiv-astro           arxiv-hep              │
-  │  arxiv-math-applied     arxiv-math-phys       arxiv-math-pure        │
-  │  arxiv-misc             arxiv-nucl-nlin-physother                    │
-  │  arxiv-qbio-qfin-econ   arxiv-quantph-grqc    arxiv-stat-eess        │
-  │                                                                      │
-  │  docs-python  docs-rust  docs-javascript  docs-docker                │
-  │  docs-anthropic  docs-applescript  docs-devops  docs-web             │
-  └──────────────────────────────────────────────────────────────────────┘
+START -> check_cache -> route_query -> embed_query -> hybrid_retrieve
+      -> should_web_search -> [web_search] -> merge_results
+      -> rerank_results -> build_context -> llm_inference
+      -> cache_result -> trace_result -> END
 ```
 
----
+### Langflow (Visual Pipeline Builder)
+
+Drag-and-drop alternative to coding pipelines. A custom LiteLLM component is included in `langflow/components/models/`. Build your own RAG flows visually. Use alongside or instead of LangGraph.
+
+### Academic Tools Standalone
+
+The Open WebUI tools work on their own. Install them into Open WebUI — no Qdrant, no embedders needed. They call external APIs directly (Semantic Scholar, PubMed, OpenAlex, etc.).
+
+### Mix and Match
+
+- **Just arXiv search with simple dense?** Deploy Qdrant + dense embedder + Open WebUI
+- **Just academic API tools?** Deploy Open WebUI + install tool JSONs
+- **Full stack?** Deploy everything
+- **Custom flows?** Use Langflow instead of or alongside LangGraph
+
+## Service Map
+
+| Service | Port | Role |
+|---|---|---|
+| **Qdrant** | 6333 | Vector database for all collections |
+| **BGE-M3 Dense** | 8025 | Dense embedder (vLLM, 1024-dim, OpenAI-compatible) |
+| **BGE-M3 Sparse** | 8035 | Sparse embedder (SPLADE weights, FastAPI) |
+| **BGE-M3 Reranker** | 8020 | Cross-encoder reranker (vLLM) |
+| **RAG Proxy** | 8002 | OpenAI-compatible `/v1/chat/completions` with RAG |
+| **LiteLLM** | 4000 | Routes to local vLLM or 200+ cloud model providers |
+| **Open WebUI** | 8080 | Chat interface with academic tools and document upload |
+| **Langflow** | 7860 | Visual pipeline builder |
+| **Redis** | 6379 | Result caching |
+| **SearXNG** | 8888 | Private web search |
+| **Langfuse** | 3000 | Observability and tracing (optional) |
 
 ## Quick Start
 
-### Prerequisites
 ```bash
-# 1. Create the Docker network (once only)
+# 1. Clone and configure
+git clone https://github.com/MARKYMARK55/Spark-Scholar.git
+cd Spark-Scholar
+cp .env.example env/.env
+# Edit env/.env — set VLLM_MODEL_NAME, API keys, etc.
+
+# 2. Create Docker network
 docker network create llm-net
 
-# 2. Copy env template — all local keys are pre-filled, just set your model name
-cp .env.example env/.env
-nano env/.env          # set VLLM_MODEL_NAME to match your SparkRun model
+# 3. Start core services
+docker compose -f core_services/qdrant.yml up -d
+docker compose -f core_services/core_services.yml up -d
 
-# 3. Start your inference model via SparkRun
-#    github.com/scitrera/sparkrun  |  spark-arena.com
-#    Install: uvx sparkrun setup install
-sparkrun run nemotron-3-nano-nvfp4          # ~30B Nemotron, fits in ~40GB
-sparkrun run qwen3-instruct-80b            # ~80B Qwen3, uses most of 128GB
-sparkrun run qwen3-coder-next-fp8          # coding-optimised
-# Browse all: sparkrun list   Search: sparkrun search <term>
+# 4. Start embedding services
+docker compose -f embedding/bge_m3_dense.yml up -d
+docker compose -f embedding/bge_m3_sparse.yml up -d
+docker compose -f embedding/bge_m3_reranker.yml up -d
+
+# 5. Restore arXiv snapshots from HuggingFace (or build from scratch)
+pip install huggingface_hub
+hf download MARKYMARK55/spark-scholar-arxiv-snapshots \
+  --repo-type dataset \
+  --include "snapshots/*.snapshot" \
+  --local-dir ./data
+
+for f in ./data/snapshots/*.snapshot; do
+  name=$(basename "$f" .snapshot)
+  curl -X POST "http://localhost:6333/collections/${name}/snapshots/upload" \
+    -H "Content-Type: multipart/form-data" \
+    -H "api-key: simple-api-key" \
+    -F "snapshot=@${f}"
+done
+
+# 6. Open the UI
+# http://localhost:8080
 ```
 
-### Start the full stack
+See [Getting Started](docs/getting_started.md) for full prerequisites, environment configuration, and startup details.
+
+## Hybrid Search Example
+
+Working Python example using the containerized BGE-M3 services. No local model loading needed.
+
+```python
+import httpx
+from qdrant_client import QdrantClient
+from qdrant_client.models import (
+    Fusion, FusionQuery, NamedSparseVector, NamedVector,
+    Prefetch, SparseVector,
+)
+
+DENSE_URL  = "http://localhost:8025"
+SPARSE_URL = "http://localhost:8035"
+QDRANT_URL = "http://localhost:6333"
+API_KEY    = "simple-api-key"
+
+query = "attention mechanisms in transformer architectures"
+
+# 1. Dense embedding (OpenAI-compatible endpoint)
+dense_resp = httpx.post(
+    f"{DENSE_URL}/v1/embeddings",
+    headers={"Authorization": f"Bearer {API_KEY}"},
+    json={"model": "bge-m3-embedder", "input": [query]},
+)
+dense_vec = dense_resp.json()["data"][0]["embedding"]
+
+# 2. Sparse embedding (SPLADE weights)
+sparse_resp = httpx.post(
+    f"{SPARSE_URL}/encode",
+    headers={"Authorization": f"Bearer {API_KEY}"},
+    json={"texts": [query]},
+)
+sp = sparse_resp.json()["embeddings"][0]
+
+# 3. Hybrid search with Qdrant RRF fusion
+client = QdrantClient(url=QDRANT_URL, api_key=API_KEY)
+
+results = client.query_points(
+    collection_name="arxiv-cs-ml-ai",
+    prefetch=[
+        Prefetch(
+            query=NamedVector(name="dense_embedding", vector=dense_vec),
+            using="dense_embedding",
+            limit=100,
+        ),
+        Prefetch(
+            query=NamedSparseVector(
+                name="sparse_text",
+                vector=SparseVector(indices=sp["indices"], values=sp["values"]),
+            ),
+            using="sparse_text",
+            limit=100,
+        ),
+    ],
+    query=FusionQuery(fusion=Fusion.RRF),
+    limit=10,
+    with_payload=True,
+)
+
+for pt in results.points:
+    print(f"[{pt.score:.4f}] {pt.payload['title']}")
+    print(f"         arXiv:{pt.payload['original_arxiv_id']}")
+```
+
+## arXiv Collections
+
+15 domain-specific collections covering every paper in arXiv. Pre-built snapshots available on [HuggingFace](https://huggingface.co/datasets/MARKYMARK55/spark-scholar-arxiv-snapshots).
+
+| Collection | Papers | Topics |
+|---|---:|---|
+| `arxiv-condmat` | 344,622 | Condensed Matter Physics |
+| `arxiv-astro` | 330,467 | Astrophysics |
+| `arxiv-math-applied` | 301,943 | Applied Mathematics |
+| `arxiv-hep` | 299,312 | High Energy Physics |
+| `arxiv-math-pure` | 287,628 | Pure Mathematics |
+| `arxiv-nucl-nlin-physother` | 285,526 | Nuclear, Nonlinear, Other Physics |
+| `arxiv-cs-systems-theory` | 215,386 | CS Systems, Theory, Databases, Crypto |
+| `arxiv-cs-ml-ai` | 206,821 | Machine Learning, AI |
+| `arxiv-quantph-grqc` | 199,317 | Quantum Physics, General Relativity |
+| `arxiv-cs-cv` | 163,600 | Computer Vision, Graphics |
+| `arxiv-stat-eess` | 139,081 | Statistics, Electrical Engineering |
+| `arxiv-cs-nlp-ir` | 105,472 | NLP, Information Retrieval, Speech |
+| `arxiv-misc` | 90,592 | Robotics, HCI, Social Networks, Other CS |
+| `arxiv-qbio-qfin-econ` | 60,426 | Quantitative Biology, Finance, Economics |
+| `arxiv-math-phys` | 49,046 | Mathematical Physics |
+| **Total** | **3,079,239** | |
+
+116 arXiv categories are mapped across these 15 collections via the [category router](pipeline/router.py).
+
+Also available as database-agnostic Parquet: [arxiv-bge-m3-embeddings](https://huggingface.co/datasets/MARKYMARK55/arxiv-bge-m3-embeddings).
+
+## Document Ingestion
+
+Add your own PDFs, web documentation, and papers into the same vector search infrastructure.
+
+### PDF and Web Doc Ingestion
+
+Each folder in the ingestion directory creates its own searchable collection. Documents are processed through:
+
+1. **Text extraction** (3-tier cascade): Docling for multi-column academic layouts, PyMuPDF for straightforward PDFs, Unstructured with OCR as fallback
+2. **Chunking**: Overlapping token-based splits (tiktoken cl100k_base)
+3. **Auto-classification**: UMAP dimensionality reduction, HDBSCAN clustering, LLM-generated topic names (Qwen3 via vLLM)
+4. **Embedding**: Dense + sparse vectors via BGE-M3 containers
+5. **Indexing**: Upserted into Qdrant with rich payload (title, authors, year, page number, topic, chunk text)
+
+Figure extraction and captioning is available via `ingest/06_caption_figures.py`.
+
+**Pre-configured documentation collections**: Python, Rust, JavaScript, Docker, Anthropic, AppleScript, DevOps, Web.
+
+**Query routing**: The router auto-detects all collections from Qdrant. General academic queries search all collections. Code-specific queries route to relevant `docs-*` collections. Domain-specific science queries route to specific arXiv collections.
+
+See [Ingestion Guide](docs/ingestion.md) for full details.
+
+### Citation Graph Expansion
+
+Start from any paper and automatically discover, download, and index its references.
+
 ```bash
-./scripts/start_stack.sh
+# Expand to 2 levels deep, only follow highly-cited references
+python ingest/08_expand_citations.py \
+    --arxiv 2303.08774 \
+    --depth 2 \
+    --min-citations 50 \
+    --max-per-paper 30 \
+    --output-dir data/citations/
 ```
 
-Starts all services in dependency order with health checks:
-`Qdrant → Embedding → Redis + SearXNG + LiteLLM + Open WebUI + Langflow → RAG Proxy`
+- **Configurable depth**: L1 (your papers) -> L2 (their references) -> L3 (references of references) -> ... Ln
+- **Configurable direction**: Follow citations, follow authors (all papers by same authors), or both
+- **Quality filters**: Minimum citation count, max references per paper
+- **Reference resolution**: Semantic Scholar API -> arXiv API -> Unpaywall (journal open access) -> PDF text extraction (fallback)
+- **Resumable**: Re-run the same command and already-processed papers are skipped
+- **JSON manifests**: Track every discovered reference and its download/ingestion status
 
-### Verify
-```bash
-# Full smoke test — health checks + end-to-end RAG query
-bash scripts/smoke_test.sh
+## Academic Tools
 
-# Individual health endpoints
-curl http://localhost:8002/health     # RAG proxy
-curl http://localhost:4000/health     # LiteLLM
-curl http://localhost:6333/readyz     # Qdrant
-open http://localhost:8080            # Open WebUI
-```
+20+ Open WebUI workspace tools that search beyond the local index. Install whichever tools you need into Open WebUI.
 
-### Ingest your corpus
-```bash
-# Create all 22 Qdrant collections (run once)
-python ingest/02_create_collections.py
+### Bibliographic Databases (500M+ records combined)
 
-# arXiv abstracts — 2.96M papers (optional, takes 18–22 hrs)
-python ingest/01_download_arxiv.py --output-dir data/
-bash scripts/start_indexing_mode.sh
-python ingest/03_ingest_dense.py  --input data/arxiv_with_abstract.jsonl --batch-size 256 &
-python ingest/04_ingest_sparse.py --input data/arxiv_with_abstract.jsonl --batch-size 64
-
-# Your own PDFs (auto-classified into collections via HDBSCAN)
-python ingest/05_ingest_pdfs.py --input-dir /path/to/pdfs/
-
-# Web documentation — crawl any docs site
-python ingest/07_ingest_html_docs.py \
-    --url https://docs.anthropic.com/en/docs/ \
-    --collection docs-anthropic --depth 2
-
-# Citation graph expansion — L2 + L3 referenced papers
-python ingest/08_expand_citations.py --arxiv 2303.08774 --depth 2
-```
-
----
-
-## Service Port Map
-
-| Service | Port | Purpose |
+| Tool | Source | Scale |
 |---|---|---|
-| Open WebUI | 8080 | Primary chat UI |
-| LiteLLM proxy | 4000 | Unified model gateway |
-| RAG proxy | 8002 | OpenAI-compatible RAG endpoint |
-| Qdrant | 6333 | Vector database + dashboard |
-| Langflow | 7860 | Visual pipeline builder |
-| SearXNG | 8888 | Private web search |
-| Langfuse | 3000 | Observability / tracing (optional) |
-| BGE-M3 dense | 8025 | Dense embedder (vLLM) |
-| BGE-M3 sparse | 8035 | Sparse embedder (FastAPI) |
-| BGE reranker | 8020 | Cross-encoder reranker (vLLM) |
-| SparkRun vLLM | 8000 | Primary inference model |
-| Phi Mini (opt.) | 8001 | Secondary lightweight model |
-| Redis/Valkey | 6379 | Response cache |
+| Semantic Scholar | Ai2 | 200M+ papers, citation graphs, author profiles |
+| OpenAlex | OurResearch | 250M+ works, largest open bibliographic catalog |
+| PubMed / NCBI | NIH | 40M+ biomedical and life sciences articles |
+| CORE | Open University | 200M+ open access papers |
+| Europe PMC | EMBL-EBI | 40M+ records, OA papers and preprints |
+| Dimensions / Lens.org | Digital Science | Patents, grants, funding data |
 
----
+### Discovery and Graph Tools
 
-## Repository Structure
+| Tool | What it does |
+|---|---|
+| Connected Papers | Citation similarity graphs for any paper |
+| arXiv Recent Keyword Alert | Recent preprints by keyword and category |
+| Consolidated Metadata Fetcher | Unified interface across Semantic Scholar, OpenAlex, CORE, NCBI |
+
+### AI-Powered Research Tools
+
+| Tool | What it does |
+|---|---|
+| **Ai2 Asta MCP Search** | Semantic snippet search across Ai2's full corpus (new from the Allen Institute for AI) |
+| Perplexity Academic Q&A | Research Q&A with live citations |
+| Google Gemini | Multimodal academic reasoning (figures, tables, math) |
+| Grok | Math, code, obscure references |
+| OpenRouter | Access to Claude, Gemini, Grok, Llama for synthesis |
+
+See [Academic Tools Guide](docs/open_webui_tools.md) for installation and API key configuration.
+
+## Documentation
+
+| Guide | Description |
+|---|---|
+| [Getting Started](docs/getting_started.md) | Prerequisites, environment configuration, startup order |
+| [Ingestion](docs/ingestion.md) | arXiv pipeline and custom document ingestion |
+| [Search and Retrieval](docs/search_retrieval.md) | Hybrid search mechanics, LangGraph pipeline, caching |
+| [Open WebUI RAG Setup](docs/open_webui_rag_setup.md) | Connecting Open WebUI to RAG (built-in vs. proxy) |
+| [Academic Tools](docs/open_webui_tools.md) | Installing and configuring academic workspace tools |
+| [Embedding Performance](docs/embedding_speed.md) | Throughput benchmarks and optimization |
+| [UI Interfaces](docs/ui_interfaces.md) | All web interfaces (Open WebUI, Qdrant, LiteLLM, Langflow, Langfuse) |
+| [Troubleshooting](docs/troubleshooting.md) | Common issues and fixes |
+
+## Project Structure
 
 ```
 spark-scholar/
-├── .env.example                   # Copy to env/.env — all local keys pre-filled
-├── README.md                      # This file — index + architecture + quick start
-├── requirements.txt               # Python dependencies
-│
-├── core_services/                 # Core service compose files + configs
-│   ├── core_services.yml          # LiteLLM + Postgres + Open WebUI + Langflow
-│   ├── qdrant.yml                 # Qdrant vector DB
-│   ├── redis.yml                  # Valkey (Redis-compatible) cache
-│   ├── searxng.yml                # Private web search
-│   ├── langfuse.yml               # Observability (optional)
-│   ├── litellm_local.yaml         # LiteLLM config — SparkRun + BGE-M3 + Phi Mini
-│   └── litellm_cloud.yaml         # LiteLLM config — cloud models (reference only)
-│
-├── embedding/                     # Embedding service compose files
-│   ├── bge_m3_dense.yml           # BGE-M3 dense vLLM, port 8025 (production 12% GPU)
-│   ├── bge_m3_dense_indexing.yml  # BGE-M3 dense vLLM, port 8025 (50% GPU, bulk ingest)
-│   ├── bge_m3_sparse.yml          # BGE-M3 sparse FastAPI, port 8035
-│   └── bge_m3_reranker.yml        # BGE-M3 cross-encoder vLLM, port 8020
-│
-├── rag_proxy/                     # RAG proxy service
-│   ├── rag_proxy.py               # FastAPI OpenAI-compatible server
-│   ├── rag_proxy.yml              # Docker Compose (build context = repo root)
-│   ├── Dockerfile
-│   └── requirements.txt
-│
-├── pipeline/                      # Core RAG logic (used by rag_proxy + ingest)
-│   ├── langgraph_pipeline.py      # LangGraph StateGraph (12 nodes)
-│   ├── embeddings.py              # BGE-M3 dense + sparse HTTP clients
-│   ├── hybrid_search.py           # Qdrant Prefetch + FusionQuery(RRF) + fan-out
-│   ├── reranker.py                # BGE-M3 cross-encoder via vLLM /score
-│   ├── router.py                  # Query → collection routing (keyword heuristics)
-│   ├── cache.py                   # Redis result cache (SHA-256 keyed)
-│   └── tracer.py                  # Langfuse spans (no-op if keys absent)
-│
-├── query/                         # CLI search tools (HTTP only — no local model needed)
-│   ├── dense_search.py            # Dense-only HNSW search
-│   ├── sparse_search.py           # Sparse-only inverted index search
-│   └── hybrid_search.py           # Full hybrid + cross-encoder rerank (recommended)
-│
-├── ingest/                        # Data ingestion scripts
-│   ├── 01_download_arxiv.py       # Stream arXiv HuggingFace dataset → JSONL
-│   ├── 02_create_collections.py   # Create 22 Qdrant collections (14 arXiv + 8 docs)
-│   ├── 03_ingest_dense.py         # BGE-M3 dense embed + upsert (arXiv abstracts)
-│   ├── 04_ingest_sparse.py        # BGE-M3 sparse embed + upsert (arXiv abstracts)
-│   ├── 05_ingest_pdfs.py          # Full-text PDF + HDBSCAN auto-classify + route
-│   ├── 06_caption_figures.py      # Vision model figure captioning (PDFs)
-│   ├── 07_ingest_html_docs.py     # BFS HTML crawler → chunk → embed → Qdrant
-│   └── 08_expand_citations.py     # Citation graph L2/L3 via Semantic Scholar API
-│
-├── images/                        # Custom Docker image source code
-│   └── sparse-embedder/           # BGE-M3 SPLADE FastAPI service (port 8035)
-│       ├── sparse_embed.py
-│       ├── Dockerfile
-│       └── requirements.txt
-│
-├── scripts/
-│   ├── start_stack.sh             # Full stack startup with health polling
-│   ├── start_indexing_mode.sh     # Switch dense embedder to 50% GPU (bulk ingest)
-│   └── stop_indexing_mode.sh      # Switch back to 12% GPU production mode
-│
-├── env/
-│   └── README.md                  # Environment variable quick-reference
-│
-└── docs/
-    ├── getting_started.md         # Prerequisites, env config, startup, VRAM, LiteLLM, Phi Mini
-    ├── ingestion.md               # All 8 ingest scripts, per-language crawl commands, citation expansion
-    ├── search_retrieval.md        # Dense/sparse/hybrid CLI, reranking, LangGraph pipeline, caching
-    ├── ui_interfaces.md           # Every UI — Open WebUI, Qdrant, LiteLLM, Langflow, Langfuse, SearXNG, Redis
-    ├── open_webui_tools.md        # Dynamic RAG tools, corpus expansion, Semantic Scholar, tool debugging
-    ├── troubleshooting.md         # 13 diagnostic scenarios + known limitations
-    └── embedding_speed.md         # VRAM budgets, throughput benchmarks, tuning guide
+  core_services/     Docker Compose for Qdrant, LiteLLM, Open WebUI, Redis, SearXNG
+  embedding/         BGE-M3 container configs (dense, sparse, reranker)
+  ingest/            Ingestion scripts (01-11): download, embed, ingest, expand
+  pipeline/          Core Python: hybrid search, routing, embeddings, reranker, LangGraph
+  rag_proxy/         OpenAI-compatible RAG proxy server
+  query/             Standalone CLI search tools (dense, sparse, hybrid)
+  open_webui_tools/  Academic API tools for Open WebUI
+  langflow/          Langflow custom components
+  images/            Docker image sources (sparse embedder)
+  eval/              Retrieval and answer quality evaluation
+  docs/              Detailed documentation
+  config/            Qdrant configuration
+  env/               Environment configuration (.env)
 ```
 
----
+## Hardware
 
-## Contributing
+Built for NVIDIA DGX Spark (GB10 GPU, 128 GB unified memory). The embedding services and vLLM inference benefit from GPU acceleration. Qdrant, Redis, and the proxy services are CPU-only. The platform will run on any machine with Docker, though embedding and inference will be slower on CPU.
 
-Bug reports, documentation fixes, new ingestion sources, and alternative hardware configs are all welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
+## Related
+
+- [spark-scholar-arxiv-snapshots](https://huggingface.co/datasets/MARKYMARK55/spark-scholar-arxiv-snapshots) -- Pre-built Qdrant snapshots (skip 24h GPU time)
+- [arxiv-bge-m3-embeddings](https://huggingface.co/datasets/MARKYMARK55/arxiv-bge-m3-embeddings) -- Database-agnostic Parquet format
+- [arxiv-embedding-forge](https://github.com/MARKYMARK55/arxiv-embedding-forge) -- Reproducible embedding build pipeline
+- [BGE-M3](https://huggingface.co/BAAI/bge-m3) -- Embedding model
+- [Qdrant](https://qdrant.tech/) -- Vector database
 
 ## License
 
-[MIT](LICENSE) — free to use, modify, and redistribute.
+MIT License
+
+Underlying arXiv metadata is subject to [arXiv's Terms of Use](https://info.arxiv.org/help/license/index.html) and the original paper licenses.

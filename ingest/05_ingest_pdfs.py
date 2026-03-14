@@ -87,70 +87,45 @@ OWUI_FILES_COLLECTION = "open-webui_files"
 # Text extraction
 # ---------------------------------------------------------------------------
 
+DOCLING_URL = os.environ.get("DOCLING_URL", "http://localhost:9099/docling/convert")
+
+
 def extract_text_docling(pdf_path: str) -> tuple[list[dict], dict]:
     """
-    Extract text from PDF using docling (IBM, Apache 2.0).
+    Extract structured Markdown from PDF via the Docling service (pipelines container).
 
-    Docling understands multi-column academic layouts, tables, and figures
-    better than raw text-order extractors, making it the preferred tier-1
-    parser for scientific PDFs.
+    Calls the /docling/convert HTTP endpoint which runs Docling inside a container
+    with proper dependencies isolated from the host environment.
 
     Returns
     -------
-    (pages, metadata)
-        pages: list of {"page_num": int, "text": str}
+    (sections, metadata)
+        sections: list of {"heading": str, "text": str, "page_num": int}
         metadata: dict with title, authors, year
     """
-    from docling.document_converter import DocumentConverter
-    from docling.datamodel.base_models import ItemLabel
+    import httpx
 
-    try:
-        # TableItem is needed for table-aware export; import defensively
-        from docling.datamodel.document import TableItem
-    except ImportError:
-        TableItem = None
+    with open(pdf_path, "rb") as f:
+        resp = httpx.post(
+            DOCLING_URL,
+            files={"file": (Path(pdf_path).name, f, "application/pdf")},
+            timeout=300.0,
+        )
+    resp.raise_for_status()
+    data = resp.json()
 
-    result = DocumentConverter().convert(pdf_path)
+    if "error" in data:
+        raise RuntimeError(f"Docling service error: {data['error']}")
 
-    # Group text items by page number
-    page_texts: dict[int, list[str]] = {}
-    for item in result.document.texts:
-        # Each item carries provenance; use the first prov entry for page_no
-        page_no = 1
-        if item.prov and len(item.prov) > 0:
-            page_no = item.prov[0].page_no
-
-        if TableItem is not None and isinstance(item, TableItem):
-            try:
-                text = item.export_to_dataframe().to_string()
-            except Exception:
-                text = str(item)
-        else:
-            text = str(item)
-
-        text = text.strip()
-        if text:
-            page_texts.setdefault(page_no, []).append(text)
-
-    pages = [
-        {"page_num": pn, "text": "\n".join(texts)}
-        for pn, texts in sorted(page_texts.items())
-    ]
+    sections = data.get("sections", [])
+    metadata = data.get("metadata", {})
 
     # Reject near-empty extractions so callers can fall through
-    total_chars = sum(len(p["text"]) for p in pages)
+    total_chars = sum(len(s.get("text", "")) for s in sections)
     if total_chars < 200:
         return [], {}
 
-    # Extract document-level metadata
-    title = getattr(result.document, "name", "") or ""
-
-    metadata: dict = {
-        "title": title,
-        "authors": "",
-        "year": None,
-    }
-    return pages, metadata
+    return sections, metadata
 
 
 def extract_text_pymupdf(pdf_path: str) -> tuple[list[dict], dict]:
@@ -172,7 +147,7 @@ def extract_text_pymupdf(pdf_path: str) -> tuple[list[dict], dict]:
         text = page.get_text("text")
         text = text.strip()
         if text:
-            pages.append({"page_num": page_num + 1, "text": text})
+            pages.append({"page_num": page_num + 1, "text": text, "heading": ""})
 
     meta = doc.metadata or {}
     year = None
@@ -216,7 +191,7 @@ def extract_text_unstructured(pdf_path: str) -> tuple[list[dict], dict]:
             pages.setdefault(current_page, []).append(text)
 
     page_list = [
-        {"page_num": pn, "text": "\n".join(texts)}
+        {"page_num": pn, "text": "\n".join(texts), "heading": ""}
         for pn, texts in sorted(pages.items())
     ]
     return page_list, {}
@@ -230,10 +205,12 @@ def extract_text(pdf_path: str) -> tuple[list[dict], dict]:
       3. unstructured — OCR-capable last-resort fallback
     """
     # 1. Try docling (best for multi-column academic layouts + tables)
+    #    Returns sections with headings for section-aware chunking
     try:
-        pages, meta = extract_text_docling(pdf_path)
-        if sum(len(p["text"]) for p in pages) >= 200:
-            return pages, meta
+        sections, meta = extract_text_docling(pdf_path)
+        if sum(len(s["text"]) for s in sections) >= 200:
+            logger.info("docling extracted %d sections via Markdown export", len(sections))
+            return sections, meta
         logger.info("docling low yield, falling back to PyMuPDF")
     except Exception as exc:
         logger.info("docling failed (%s), falling back to PyMuPDF", exc)
@@ -260,16 +237,22 @@ def extract_text(pdf_path: str) -> tuple[list[dict], dict]:
 # ---------------------------------------------------------------------------
 
 def chunk_text(
-    pages: list[dict],
+    sections: list[dict],
     chunk_size: int = CHUNK_SIZE,
     chunk_overlap: int = CHUNK_OVERLAP,
 ) -> list[dict]:
     """
-    Split page texts into overlapping token-based chunks.
+    Section-aware chunking: split within sections, never across them.
+
+    If a section fits within chunk_size tokens, it becomes a single chunk.
+    If a section is too large, it gets split with token-based sliding window.
+    Each chunk carries its section heading as context prefix.
 
     Parameters
     ----------
-    pages : list of {"page_num": int, "text": str}
+    sections : list of {"heading": str, "text": str, "page_num": int}
+        From Docling Markdown extraction, or legacy page-based extraction
+        (which uses {"page_num": int, "text": str} — heading will be "").
     chunk_size : int
         Target chunk size in tokens.
     chunk_overlap : int
@@ -277,53 +260,60 @@ def chunk_text(
 
     Returns
     -------
-    list of {"chunk_idx": int, "page_num": int, "text": str, "token_count": int}
+    list of {"chunk_idx": int, "page_num": int, "text": str, "token_count": int,
+             "heading": str}
     """
     enc = tiktoken.get_encoding("cl100k_base")
 
     chunks = []
     chunk_idx = 0
 
-    # Concatenate all page text with page markers
-    full_text_parts = []
-    page_boundaries = []
-    char_offset = 0
-    for page in pages:
-        page_boundaries.append((char_offset, page["page_num"]))
-        full_text_parts.append(page["text"])
-        char_offset += len(page["text"]) + 1  # +1 for newline
-
-    full_text = "\n".join(full_text_parts)
-    tokens = enc.encode(full_text)
-
     step = chunk_size - chunk_overlap
     if step <= 0:
         step = chunk_size
 
-    for start_tok in range(0, max(1, len(tokens)), step):
-        end_tok = min(start_tok + chunk_size, len(tokens))
-        chunk_tokens = tokens[start_tok:end_tok]
-        chunk_text_str = enc.decode(chunk_tokens)
+    for section in sections:
+        section_text = section["text"]
+        heading = section.get("heading", "")
+        page_num = section.get("page_num", 1)
 
-        # Find approximate page number for this chunk
-        # Use the character position of the decoded text's midpoint
-        approx_char = int((start_tok / max(len(tokens), 1)) * len(full_text))
-        page_num = 1
-        for char_start, pn in page_boundaries:
-            if char_start <= approx_char:
-                page_num = pn
+        tokens = enc.encode(section_text)
 
-        if chunk_text_str.strip():
-            chunks.append({
-                "chunk_idx": chunk_idx,
-                "page_num": page_num,
-                "text": chunk_text_str.strip(),
-                "token_count": len(chunk_tokens),
-            })
-            chunk_idx += 1
+        if len(tokens) <= chunk_size:
+            # Section fits in one chunk
+            if section_text.strip():
+                chunks.append({
+                    "chunk_idx": chunk_idx,
+                    "page_num": page_num,
+                    "text": section_text.strip(),
+                    "token_count": len(tokens),
+                    "heading": heading,
+                })
+                chunk_idx += 1
+        else:
+            # Section too large — sliding window within this section
+            for start_tok in range(0, max(1, len(tokens)), step):
+                end_tok = min(start_tok + chunk_size, len(tokens))
+                chunk_tokens = tokens[start_tok:end_tok]
+                chunk_text_str = enc.decode(chunk_tokens)
 
-        if end_tok >= len(tokens):
-            break
+                if chunk_text_str.strip():
+                    # Prefix with heading for context if this isn't the first sub-chunk
+                    text = chunk_text_str.strip()
+                    if start_tok > 0 and heading:
+                        text = f"{heading}\n\n{text}"
+
+                    chunks.append({
+                        "chunk_idx": chunk_idx,
+                        "page_num": page_num,
+                        "text": text,
+                        "token_count": len(chunk_tokens),
+                        "heading": heading,
+                    })
+                    chunk_idx += 1
+
+                if end_tok >= len(tokens):
+                    break
 
     return chunks
 
@@ -517,6 +507,7 @@ def upsert_chunks(
                 "chunk_idx": chunk["chunk_idx"],
                 "page_num": chunk["page_num"],
                 "token_count": chunk["token_count"],
+                "section_heading": chunk.get("heading", ""),
                 "source_file": source_file,
                 "topic_id": int(chunk.get("topic_id", -1)),
                 "topic_name": chunk.get("topic_name", "misc"),

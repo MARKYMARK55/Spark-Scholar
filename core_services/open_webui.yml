@@ -83,6 +83,7 @@ services:
       WEBUI_NAME: "DGX Spark"
       ENABLE_SIGNUP: "false"         # disable after creating your admin account
       DEFAULT_LOCALE: "en-GB"
+      DEFAULT_MODELS: "Expert"
 
     networks:
       - llm-net

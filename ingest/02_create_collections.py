@@ -9,12 +9,13 @@ Each collection gets:
   - sparse_text:     SPLADE-style sparse vectors (indices + values)
   - on_disk_payload: True  (payload stored on disk to save GPU VRAM)
 
-arXiv collections (14) — populated by ingest/03_ingest_dense.py + 04_ingest_sparse.py:
-  arXiv (catch-all)           arxiv-cs-ml-ai           arxiv-condmat
-  arxiv-astro                 arxiv-hep                 arxiv-math-applied
-  arxiv-math-phys             arxiv-math-pure           arxiv-misc
-  arxiv-nucl-nlin-physother   arxiv-qbio-qfin-econ      arxiv-quantph-grqc
-  arxiv-stat-eess             arxiv-cs-systems-theory
+arXiv collections (16) — populated by ingest/03_ingest_dense.py + 04_ingest_sparse.py:
+  arXiv (catch-all)           arxiv-cs-ml-ai            arxiv-cs-cv
+  arxiv-cs-nlp-ir             arxiv-condmat              arxiv-astro
+  arxiv-hep                   arxiv-math-applied         arxiv-math-phys
+  arxiv-math-pure             arxiv-misc                 arxiv-nucl-nlin-physother
+  arxiv-qbio-qfin-econ        arxiv-quantph-grqc         arxiv-stat-eess
+  arxiv-cs-systems-theory
 
 Documentation collections (8) — populated by ingest/05_ingest_pdfs.py + 07_ingest_html_docs.py:
   docs-python        Python stdlib, NumPy, Pandas, FastAPI, LangChain, etc.
@@ -68,7 +69,9 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 ARXIV_COLLECTIONS = [
     "arXiv",                     # catch-all (every paper also indexed here)
-    "arxiv-cs-ml-ai",            # cs.LG, cs.AI, cs.CL, cs.CV, cs.RO, stat.ML
+    "arxiv-cs-ml-ai",            # cs.LG, cs.AI, cs.NE
+    "arxiv-cs-cv",               # cs.CV
+    "arxiv-cs-nlp-ir",           # cs.CL, cs.IR
     "arxiv-condmat",             # cond-mat.*
     "arxiv-astro",               # astro-ph.*
     "arxiv-hep",                 # hep-th, hep-ph, hep-ex, hep-lat
@@ -267,7 +270,7 @@ def main():
     parser.add_argument(
         "--arxiv-only",
         action="store_true",
-        help="Create only the 14 arXiv subject collections",
+        help="Create only the 16 arXiv subject collections",
     )
     parser.add_argument(
         "--docs-only",

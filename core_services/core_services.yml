@@ -174,6 +174,7 @@ services:
       WEBUI_NAME: "DGX Spark"
       ENABLE_SIGNUP: "false"
       DEFAULT_LOCALE: "en-GB"
+      DEFAULT_MODELS: "Expert"
 
     depends_on:
       litellm:
