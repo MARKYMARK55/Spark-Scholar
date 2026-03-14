@@ -1,0 +1,10 @@
+# Ignore all bulk PDFs (proprietary, large)
+*
+
+# Track demo directories with freely-licensed samples
+!demo-*/
+!demo-*/**
+
+# Track documentation
+!.gitignore
+!README.md

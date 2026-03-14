@@ -956,11 +956,17 @@ def main() -> None:  # noqa: C901  (complexity is inherent to CLI orchestration)
         metavar="PATH",
         help="Path to text file with one URL per line (# comments ignored)",
     )
+    input_group.add_argument(
+        "--config",
+        metavar="PATH",
+        help="TOML config file defining collection, tag, depth, and target URLs "
+             "(see RAG/crawl_targets/ for examples)",
+    )
 
-    # Required
+    # Required (unless --config provides it)
     parser.add_argument(
         "--collection",
-        required=True,
+        default=None,
         metavar="NAME",
         help="Target Qdrant collection name (e.g. docs-rust, docs-anthropic)",
     )
@@ -1040,6 +1046,38 @@ def main() -> None:  # noqa: C901  (complexity is inherent to CLI orchestration)
     )
 
     args = parser.parse_args()
+
+    # ── TOML config support ──────────────────────────────────────────────
+    if args.config:
+        import tomllib
+
+        with open(args.config, "rb") as f:
+            cfg = tomllib.load(f)
+
+        # Override CLI args from TOML
+        if not args.collection:
+            args.collection = cfg.get("collection")
+        if args.tag is None:
+            args.tag = cfg.get("tag")
+        if args.depth == 1 and "depth" in cfg:  # only override default
+            args.depth = cfg["depth"]
+
+        # Build a temporary URL file from TOML targets
+        toml_urls = [t["url"] for t in cfg.get("targets", [])]
+        if toml_urls:
+            import tempfile
+            tf = tempfile.NamedTemporaryFile(
+                mode="w", suffix=".txt", delete=False, prefix="crawl_urls_"
+            )
+            tf.write("\n".join(toml_urls))
+            tf.close()
+            args.url_file = tf.name
+            args.url = None
+
+    # Validate collection is provided
+    if not args.collection:
+        parser.error("--collection is required (or provide via --config TOML)")
+    # ─────────────────────────────────────────────────────────────────────
 
     # Configure logging
     logging.basicConfig(

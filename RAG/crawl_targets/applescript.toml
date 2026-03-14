@@ -1,0 +1,9 @@
+# AppleScript and macOS automation documentation
+
+collection = "docs-applescript"
+tag = "applescript"
+depth = 2
+
+[[targets]]
+url = "https://developer.apple.com/library/archive/documentation/AppleScript/Conceptual/AppleScriptLangGuide/"
+description = "AppleScript Language Guide"

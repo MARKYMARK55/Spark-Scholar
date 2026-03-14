@@ -1,0 +1,38 @@
+# Python ecosystem documentation
+# Each target URL will be crawled and indexed into the collection below.
+
+collection = "docs-python"
+tag = "python"
+depth = 2
+
+[[targets]]
+url = "https://docs.python.org/3/"
+description = "Python 3 standard library"
+
+[[targets]]
+url = "https://numpy.org/doc/stable/"
+description = "NumPy reference"
+
+[[targets]]
+url = "https://pandas.pydata.org/docs/"
+description = "Pandas documentation"
+
+[[targets]]
+url = "https://scikit-learn.org/stable/"
+description = "scikit-learn user guide"
+
+[[targets]]
+url = "https://fastapi.tiangolo.com/"
+description = "FastAPI documentation"
+
+[[targets]]
+url = "https://docs.pydantic.dev/latest/"
+description = "Pydantic v2 documentation"
+
+[[targets]]
+url = "https://python.langchain.com/docs/"
+description = "LangChain documentation"
+
+[[targets]]
+url = "https://scipy.github.io/devdocs/"
+description = "SciPy reference"

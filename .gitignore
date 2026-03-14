@@ -1,3 +1,9 @@
+# RAG data (large files, symlinks)
+RAG/qdrant_storage
+RAG/arxiv/
+RAG/html_crawl/
+RAG/snapshots/
+
 # Python
 __pycache__/
 *.py[cod]

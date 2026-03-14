@@ -3,12 +3,12 @@
 ## Setup (do this first)
 
 ```bash
-cp .env.example env/.env
-nano env/.env   # fill in values — see sections below
+cp env/.env.example env/.env
+nano env/.env   # fill in your values
 ```
 
 The `.env` file is **gitignored** — it never gets committed.
-`.env.example` (safe placeholders) is the only file in this folder that's in git.
+`.env.example` contains safe placeholders and is tracked in git. Start there and update as needed.
 
 ---
 
