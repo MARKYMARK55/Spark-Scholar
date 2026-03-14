@@ -3,7 +3,7 @@
 
 collection = "Qdrant_Web_Doc"
 tag = "qdrant"
-depth = 2
+depth = 3
 
 [[targets]]
 url = "https://qdrant.tech/documentation/"

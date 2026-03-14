@@ -1,9 +1,9 @@
-# Python ecosystem documentation
+# Python core + data science ecosystem documentation
 # Each target URL will be crawled and indexed into the collection below.
 
 collection = "docs-python"
 tag = "python"
-depth = 2
+depth = 3
 
 [[targets]]
 url = "https://docs.python.org/3/"
@@ -22,17 +22,57 @@ url = "https://scikit-learn.org/stable/"
 description = "scikit-learn user guide"
 
 [[targets]]
-url = "https://fastapi.tiangolo.com/"
-description = "FastAPI documentation"
-
-[[targets]]
-url = "https://docs.pydantic.dev/latest/"
-description = "Pydantic v2 documentation"
-
-[[targets]]
-url = "https://python.langchain.com/docs/"
-description = "LangChain documentation"
-
-[[targets]]
 url = "https://scipy.github.io/devdocs/"
 description = "SciPy reference"
+
+[[targets]]
+url = "https://matplotlib.org/stable/"
+description = "Matplotlib plotting library"
+
+[[targets]]
+url = "https://seaborn.pydata.org/"
+description = "Seaborn statistical visualization"
+
+[[targets]]
+url = "https://docs.sympy.org/latest/"
+description = "SymPy symbolic mathematics"
+
+[[targets]]
+url = "https://joblib.readthedocs.io/en/stable/"
+description = "Joblib parallel computing and caching"
+
+[[targets]]
+url = "https://docs.dask.org/en/stable/"
+description = "Dask parallel computing"
+
+[[targets]]
+url = "https://polars.rs/docs/"
+description = "Polars fast DataFrame library"
+
+[[targets]]
+url = "https://arrow.apache.org/docs/python/"
+description = "PyArrow columnar data"
+
+[[targets]]
+url = "https://networkx.org/documentation/stable/"
+description = "NetworkX graph algorithms"
+
+[[targets]]
+url = "https://docs.h5py.org/en/stable/"
+description = "h5py HDF5 interface"
+
+[[targets]]
+url = "https://click.palletsprojects.com/en/stable/"
+description = "Click CLI framework"
+
+[[targets]]
+url = "https://typer.tiangolo.com/"
+description = "Typer CLI framework"
+
+[[targets]]
+url = "https://rich.readthedocs.io/en/stable/"
+description = "Rich terminal formatting"
+
+[[targets]]
+url = "https://docs.pytest.org/en/stable/"
+description = "pytest testing framework"

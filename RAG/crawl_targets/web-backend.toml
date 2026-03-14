@@ -1,0 +1,49 @@
+# Web frameworks and backend tooling documentation
+
+collection = "docs-web-backend"
+tag = "web"
+depth = 3
+
+[[targets]]
+url = "https://flask.palletsprojects.com/en/stable/"
+description = "Flask web framework"
+
+[[targets]]
+url = "https://docs.celeryq.dev/en/stable/"
+description = "Celery distributed task queue"
+
+[[targets]]
+url = "https://redis.io/docs/"
+description = "Redis documentation"
+
+[[targets]]
+url = "https://www.postgresql.org/docs/current/"
+description = "PostgreSQL documentation"
+
+[[targets]]
+url = "https://docs.sqlalchemy.org/en/20/"
+description = "SQLAlchemy ORM"
+
+[[targets]]
+url = "https://www.uvicorn.org/"
+description = "Uvicorn ASGI server"
+
+[[targets]]
+url = "https://docs.gunicorn.org/en/stable/"
+description = "Gunicorn WSGI server"
+
+[[targets]]
+url = "https://www.encode.io/httpx/"
+description = "HTTPX async HTTP client"
+
+[[targets]]
+url = "https://docs.aiohttp.org/en/stable/"
+description = "aiohttp async HTTP"
+
+[[targets]]
+url = "https://docs.docker.com/"
+description = "Docker Engine documentation"
+
+[[targets]]
+url = "https://docs.docker.com/compose/"
+description = "Docker Compose documentation"

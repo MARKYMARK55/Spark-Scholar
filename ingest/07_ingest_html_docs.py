@@ -97,7 +97,13 @@ import tiktoken
 from bs4 import BeautifulSoup, Tag
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient
-from qdrant_client.models import PointStruct, SparseVector
+from qdrant_client.models import (
+    Distance,
+    PointStruct,
+    SparseVector,
+    SparseVectorParams,
+    VectorParams,
+)
 from tqdm import tqdm
 
 # ---------------------------------------------------------------------------
@@ -525,6 +531,31 @@ def make_point_id(source_url: str, chunk_idx: int) -> str:
     key = f"{source_url}::{chunk_idx}"
     digest = hashlib.sha256(key.encode("utf-8")).digest()
     return str(uuid.UUID(bytes=digest[:16]))
+
+
+# ---------------------------------------------------------------------------
+# Qdrant collection management
+# ---------------------------------------------------------------------------
+
+DENSE_DIM = 1024  # BGE-M3 dense vector dimension
+
+
+def ensure_collection(client: QdrantClient, name: str) -> None:
+    """Create the collection if it does not already exist."""
+    existing = {c.name for c in client.get_collections().collections}
+    if name in existing:
+        logger.info("Collection %s already exists", name)
+        return
+    client.create_collection(
+        collection_name=name,
+        vectors_config={
+            "dense_embedding": VectorParams(size=DENSE_DIM, distance=Distance.COSINE),
+        },
+        sparse_vectors_config={
+            "sparse_text": SparseVectorParams(),
+        },
+    )
+    logger.info("Created collection %s (dense=%d + sparse)", name, DENSE_DIM)
 
 
 # ---------------------------------------------------------------------------
@@ -1105,6 +1136,7 @@ def main() -> None:  # noqa: C901  (complexity is inherent to CLI orchestration)
     if not args.dry_run:
         client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY, timeout=120)
         logger.info("Connected to Qdrant at %s, collection=%s", QDRANT_URL, args.collection)
+        ensure_collection(client, args.collection)
 
     # HTTP session
     session = requests.Session()

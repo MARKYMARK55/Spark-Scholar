@@ -1,0 +1,102 @@
+# Machine Learning and AI frameworks documentation
+# Core frameworks everyone in ML/AI needs
+
+collection = "docs-ml-ai"
+tag = "ml-ai"
+depth = 3
+
+[[targets]]
+url = "https://pytorch.org/docs/stable/"
+description = "PyTorch documentation"
+
+[[targets]]
+url = "https://pytorch.org/tutorials/"
+description = "PyTorch tutorials"
+
+[[targets]]
+url = "https://docs.nvidia.com/deeplearning/cudnn/"
+description = "NVIDIA cuDNN deep learning primitives"
+
+[[targets]]
+url = "https://docs.nvidia.com/cuda/"
+description = "NVIDIA CUDA toolkit documentation"
+
+[[targets]]
+url = "https://huggingface.co/docs/transformers/"
+description = "HuggingFace Transformers"
+
+[[targets]]
+url = "https://huggingface.co/docs/datasets/"
+description = "HuggingFace Datasets"
+
+[[targets]]
+url = "https://huggingface.co/docs/tokenizers/"
+description = "HuggingFace Tokenizers"
+
+[[targets]]
+url = "https://huggingface.co/docs/accelerate/"
+description = "HuggingFace Accelerate"
+
+[[targets]]
+url = "https://huggingface.co/docs/peft/"
+description = "HuggingFace PEFT (LoRA, QLoRA)"
+
+[[targets]]
+url = "https://huggingface.co/docs/trl/"
+description = "HuggingFace TRL (RLHF training)"
+
+[[targets]]
+url = "https://huggingface.co/docs/hub/"
+description = "HuggingFace Hub"
+
+[[targets]]
+url = "https://huggingface.co/docs/safetensors/"
+description = "Safetensors format"
+
+[[targets]]
+url = "https://docs.vllm.ai/en/latest/"
+description = "vLLM inference engine"
+
+[[targets]]
+url = "https://lightning.ai/docs/pytorch/stable/"
+description = "PyTorch Lightning"
+
+[[targets]]
+url = "https://optuna.readthedocs.io/en/stable/"
+description = "Optuna hyperparameter optimization"
+
+[[targets]]
+url = "https://mlflow.org/docs/latest/"
+description = "MLflow experiment tracking"
+
+[[targets]]
+url = "https://docs.wandb.ai/"
+description = "Weights & Biases experiment tracking"
+
+[[targets]]
+url = "https://xgboost.readthedocs.io/en/stable/"
+description = "XGBoost gradient boosting"
+
+[[targets]]
+url = "https://lightgbm.readthedocs.io/en/stable/"
+description = "LightGBM gradient boosting"
+
+[[targets]]
+url = "https://catboost.ai/en/docs/"
+description = "CatBoost gradient boosting"
+
+[[targets]]
+url = "https://www.statsmodels.org/stable/"
+description = "Statsmodels statistical modeling"
+
+[[targets]]
+url = "https://docs.pymc.io/en/stable/"
+description = "PyMC Bayesian modeling"
+
+[[targets]]
+url = "https://num.pyro.ai/"
+description = "NumPyro probabilistic programming"
+
+[[targets]]
+url = "https://onnxruntime.ai/docs/"
+description = "ONNX Runtime inference"

@@ -60,7 +60,13 @@ import numpy as np
 import tiktoken
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient
-from qdrant_client.models import PointStruct, SparseVector
+from qdrant_client.models import (
+    Distance,
+    PointStruct,
+    SparseVector,
+    SparseVectorParams,
+    VectorParams,
+)
 from tqdm import tqdm
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../env/.env"), override=False)
@@ -458,6 +464,30 @@ def name_clusters_with_llm(
 
 
 # ---------------------------------------------------------------------------
+# Qdrant collection management
+# ---------------------------------------------------------------------------
+
+DENSE_DIM = 1024  # BGE-M3 dense vector dimension
+
+
+def ensure_collection(client: QdrantClient, name: str) -> None:
+    """Create the collection if it does not already exist."""
+    existing = {c.name for c in client.get_collections().collections}
+    if name in existing:
+        return
+    client.create_collection(
+        collection_name=name,
+        vectors_config={
+            "dense_embedding": VectorParams(size=DENSE_DIM, distance=Distance.COSINE),
+        },
+        sparse_vectors_config={
+            "sparse_text": SparseVectorParams(),
+        },
+    )
+    logger.info("Created collection %s (dense=%d + sparse)", name, DENSE_DIM)
+
+
+# ---------------------------------------------------------------------------
 # Qdrant upsert
 # ---------------------------------------------------------------------------
 
@@ -617,6 +647,7 @@ def ingest_pdfs(
                 collection = route_query(all_topic_names + " " + all_text_sample)[0]
 
             # 6. Upsert into main collection
+            ensure_collection(client, collection)
             n_upserted = upsert_chunks(
                 client,
                 collection,

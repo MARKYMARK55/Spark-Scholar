@@ -2,7 +2,7 @@
 
 collection = "docs-applescript"
 tag = "applescript"
-depth = 2
+depth = 3
 
 [[targets]]
 url = "https://developer.apple.com/library/archive/documentation/AppleScript/Conceptual/AppleScriptLangGuide/"

@@ -1,0 +1,57 @@
+# Developer tools and infrastructure documentation
+
+collection = "docs-devtools"
+tag = "devtools"
+depth = 3
+
+[[targets]]
+url = "https://git-scm.com/doc"
+description = "Git version control"
+
+[[targets]]
+url = "https://docs.github.com/en"
+description = "GitHub documentation"
+
+[[targets]]
+url = "https://docs.github.com/en/actions"
+description = "GitHub Actions CI/CD"
+
+[[targets]]
+url = "https://docs.conda.io/en/latest/"
+description = "Conda package manager"
+
+[[targets]]
+url = "https://python-poetry.org/docs/"
+description = "Poetry dependency management"
+
+[[targets]]
+url = "https://docs.astral.sh/uv/"
+description = "uv fast Python package manager"
+
+[[targets]]
+url = "https://docs.astral.sh/ruff/"
+description = "Ruff Python linter"
+
+[[targets]]
+url = "https://mypy.readthedocs.io/en/stable/"
+description = "mypy static type checker"
+
+[[targets]]
+url = "https://pre-commit.com/"
+description = "pre-commit hook framework"
+
+[[targets]]
+url = "https://jupyterlab.readthedocs.io/en/stable/"
+description = "JupyterLab documentation"
+
+[[targets]]
+url = "https://code.visualstudio.com/docs"
+description = "VS Code documentation"
+
+[[targets]]
+url = "https://www.gnu.org/software/bash/manual/"
+description = "Bash reference manual"
+
+[[targets]]
+url = "https://linux.die.net/man/"
+description = "Linux man pages"

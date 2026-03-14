@@ -1,0 +1,61 @@
+# LLM, RAG, and agent frameworks documentation
+
+collection = "docs-llm-agents"
+tag = "llm-agents"
+depth = 3
+
+[[targets]]
+url = "https://python.langchain.com/docs/"
+description = "LangChain documentation"
+
+[[targets]]
+url = "https://langchain-ai.github.io/langgraph/"
+description = "LangGraph agent framework"
+
+[[targets]]
+url = "https://docs.llamaindex.ai/en/stable/"
+description = "LlamaIndex RAG framework"
+
+[[targets]]
+url = "https://docs.anthropic.com/en/docs/"
+description = "Anthropic Claude API"
+
+[[targets]]
+url = "https://platform.openai.com/docs/"
+description = "OpenAI API documentation"
+
+[[targets]]
+url = "https://docs.litellm.ai/"
+description = "LiteLLM unified LLM proxy"
+
+[[targets]]
+url = "https://docs.pydantic.dev/latest/"
+description = "Pydantic v2 data validation"
+
+[[targets]]
+url = "https://fastapi.tiangolo.com/"
+description = "FastAPI web framework"
+
+[[targets]]
+url = "https://docs.trychroma.com/"
+description = "Chroma vector database"
+
+[[targets]]
+url = "https://weaviate.io/developers/weaviate"
+description = "Weaviate vector database"
+
+[[targets]]
+url = "https://docs.smith.langchain.com/"
+description = "LangSmith tracing and evaluation"
+
+[[targets]]
+url = "https://docs.ragas.io/en/stable/"
+description = "RAGAS RAG evaluation"
+
+[[targets]]
+url = "https://unstructured-io.github.io/unstructured/"
+description = "Unstructured document parsing"
+
+[[targets]]
+url = "https://ds4sd.github.io/docling/"
+description = "Docling PDF conversion"
