@@ -1,0 +1,32 @@
+FROM --platform=linux/arm64 python:3.11-slim
+
+# Fix: Use correct package names for Debian trixie
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl \
+        libgl1 \
+        libglib2.0-0 \
+        tesseract-ocr \
+        tesseract-ocr-eng \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install CPU-only PyTorch first (no GPU complications)
+RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# Install docling and API dependencies
+RUN pip install --no-cache-dir \
+    docling>=1.14.0 \
+    fastapi \
+    uvicorn[standard] \
+    python-multipart
+
+COPY server.py .
+
+EXPOSE 5001
+
+# Simple healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:5001/health || exit 1
+
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "5001"]

@@ -1,43 +1,32 @@
 #!/bin/bash
 # =============================================================================
-# Crawl all TOML targets sequentially inside the pipelines container
+# Crawl HTML-only documentation sites (libraries without PDF downloads)
+# Plus NVIDIA/RAPIDS and Qdrant docs
 # =============================================================================
-# Usage:
-#   ./scripts/crawl_all.sh           # crawl all configs
-#   ./scripts/crawl_all.sh --notify  # crawl all + send email notification
+# Run this after downloading available PDFs via browser.
 # =============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-TOML_DIR="$PROJECT_DIR/RAG/crawl_targets"
-
 IMAGE="pipeline-deps:latest"
 NETWORK="llm-net"
 
-NOTIFY=false
-if [[ "${1:-}" == "--notify" ]]; then
-    NOTIFY=true
-fi
-
-echo "=== Crawling all TOML targets ==="
-echo "    Config dir: $TOML_DIR"
-echo "    Image: $IMAGE"
-echo ""
-
-TOTAL=0
-OK=0
-FAIL=0
-
-for toml in "$TOML_DIR"/*.toml; do
-    name=$(basename "$toml")
+run_crawl() {
+    local config="$1"
+    local name=$(basename "$config")
     echo ""
     echo "============================================================"
     echo "  Crawling: $name"
+    echo "  Started: $(date '+%Y-%m-%d %H:%M:%S')"
     echo "============================================================"
 
-    if docker run --rm \
+    local container_name="spark-crawl-${name%.toml}"
+    docker rm -f "$container_name" 2>/dev/null || true
+
+    docker run --rm \
+        --name "$container_name" \
         --entrypoint python3 \
         --network "$NETWORK" \
         -v "$PROJECT_DIR":/workspace \
@@ -49,23 +38,29 @@ for toml in "$TOML_DIR"/*.toml; do
         -e BGE_M3_API_KEY=simple-api-key \
         -e PYTHONPATH=/workspace \
         "$IMAGE" \
-        6_document_ingestion/07_ingest_html_docs.py --config "RAG/crawl_targets/$name" 2>&1; then
-        echo "  OK: $name"
-        OK=$((OK + 1))
-    else
-        echo "  FAILED: $name"
-        FAIL=$((FAIL + 1))
-    fi
-    TOTAL=$((TOTAL + 1))
-done
+        6_document_ingestion/07_ingest_html_docs.py --config "RAG/crawl_targets/$name" 2>&1
+
+    echo "  Finished: $(date '+%Y-%m-%d %H:%M:%S')"
+}
+
+echo "=== HTML-Only Documentation Crawl ==="
+echo "    Started: $(date '+%Y-%m-%d %H:%M:%S')"
+
+# Main HTML-only libraries (Pandas, scikit-learn, PyTorch, HuggingFace, etc.)
+run_crawl html-only-libs.toml
+
+# NVIDIA/RAPIDS
+run_crawl nvidia-rapids.toml
+
+# Qdrant docs (re-populate lost collection)
+run_crawl qdrant-docs.toml
 
 echo ""
 echo "============================================================"
-echo "  CRAWL SUMMARY: $OK/$TOTAL succeeded, $FAIL failed"
+echo "  ALL CRAWLS COMPLETE: $(date '+%Y-%m-%d %H:%M:%S')"
 echo "============================================================"
 
-if $NOTIFY; then
-    "$SCRIPT_DIR/notify.sh" \
-        "Doc Crawl Complete" \
-        "Crawled $TOTAL configs: $OK succeeded, $FAIL failed"
-fi
+# Send notification
+"$SCRIPT_DIR/notify.sh" \
+    "HTML Doc Crawl Complete" \
+    "All HTML-only documentation crawls finished at $(date '+%Y-%m-%d %H:%M:%S')"

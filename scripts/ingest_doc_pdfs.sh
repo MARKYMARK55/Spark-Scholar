@@ -1,45 +1,38 @@
 #!/bin/bash
 # =============================================================================
-# Crawl all TOML targets sequentially inside the pipelines container
-# =============================================================================
-# Usage:
-#   ./scripts/crawl_all.sh           # crawl all configs
-#   ./scripts/crawl_all.sh --notify  # crawl all + send email notification
+# Ingest all PDF collections via Docling → BGE-M3 → Qdrant
 # =============================================================================
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-TOML_DIR="$PROJECT_DIR/RAG/crawl_targets"
-
 IMAGE="pipeline-deps:latest"
 NETWORK="llm-net"
+PDFS="$PROJECT_DIR/RAG/PDF_folders"
 
-NOTIFY=false
-if [[ "${1:-}" == "--notify" ]]; then
-    NOTIFY=true
-fi
-
-echo "=== Crawling all TOML targets ==="
-echo "    Config dir: $TOML_DIR"
-echo "    Image: $IMAGE"
-echo ""
-
-TOTAL=0
 OK=0
 FAIL=0
 
-for toml in "$TOML_DIR"/*.toml; do
-    name=$(basename "$toml")
+for dir in "$PDFS"/*/; do
+    name=$(basename "$dir")
+    count=$(find "$dir" -name '*.pdf' 2>/dev/null | wc -l)
+    [ "$count" -eq 0 ] && continue
+
     echo ""
     echo "============================================================"
-    echo "  Crawling: $name"
+    echo "  Ingesting: $name ($count PDFs)"
+    echo "  Started: $(date '+%Y-%m-%d %H:%M:%S')"
     echo "============================================================"
 
+    container_name="spark-ingest-$name"
+    docker rm -f "$container_name" 2>/dev/null || true
+
     if docker run --rm \
+        --name "$container_name" \
         --entrypoint python3 \
         --network "$NETWORK" \
+        --gpus all \
         -v "$PROJECT_DIR":/workspace \
         -w /workspace \
         -e QDRANT_URL=http://qdrant:6333 \
@@ -47,25 +40,30 @@ for toml in "$TOML_DIR"/*.toml; do
         -e BGE_M3_DENSE_URL=http://bge-m3-dense-embedder:8000 \
         -e BGE_M3_SPARSE_URL=http://bge-m3-sparse-embedder:8001 \
         -e BGE_M3_API_KEY=simple-api-key \
+        -e DOCLING_URL=http://docling:5001/convert \
+        -e VLLM_URL=http://litellm:4000 \
+        -e VLLM_API_KEY=simple-api-key \
+        -e VLLM_MODEL_NAME=Nemotron-Fast \
         -e PYTHONPATH=/workspace \
         "$IMAGE" \
-        6_document_ingestion/07_ingest_html_docs.py --config "RAG/crawl_targets/$name" 2>&1; then
+        6_document_ingestion/05_ingest_pdfs.py \
+            --input-dir "RAG/PDF_folders/$name" \
+            --collection "$name" 2>&1; then
         echo "  OK: $name"
         OK=$((OK + 1))
     else
         echo "  FAILED: $name"
         FAIL=$((FAIL + 1))
     fi
-    TOTAL=$((TOTAL + 1))
 done
 
+TOTAL=$((OK + FAIL))
 echo ""
 echo "============================================================"
-echo "  CRAWL SUMMARY: $OK/$TOTAL succeeded, $FAIL failed"
+echo "  PDF INGESTION COMPLETE: $OK/$TOTAL succeeded, $FAIL failed"
+echo "  Finished: $(date '+%Y-%m-%d %H:%M:%S')"
 echo "============================================================"
 
-if $NOTIFY; then
-    "$SCRIPT_DIR/notify.sh" \
-        "Doc Crawl Complete" \
-        "Crawled $TOTAL configs: $OK succeeded, $FAIL failed"
-fi
+"$SCRIPT_DIR/notify.sh" \
+    "PDF Doc Ingestion Complete" \
+    "Ingested $TOTAL doc collections: $OK succeeded, $FAIL failed"

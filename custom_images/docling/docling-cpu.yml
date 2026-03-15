@@ -1,0 +1,24 @@
+services:
+  docling:
+    image: spark-docling:patched
+    container_name: docling-cpu
+    restart: unless-stopped
+    ports:
+      - "8040:5001"
+    environment:
+      - CUDA_VISIBLE_DEVICES=  # Empty = no GPU
+      - DOCLING_DEVICE=cpu
+      - PYTORCH_JIT=0
+    # Remove GPU deploy section
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - llm-net
+
+networks:
+  llm-net:
+    external: true

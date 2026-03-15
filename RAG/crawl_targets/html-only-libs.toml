@@ -1,0 +1,136 @@
+# Libraries that don't provide PDF documentation
+# These must be crawled as HTML and embedded directly
+
+collection = "docs-html-libs"
+tag = "python-libs"
+depth = 3
+
+# --- Data Science (no PDFs available) ---
+
+[[targets]]
+url = "https://pandas.pydata.org/docs/"
+description = "Pandas documentation (no PDF for 2.x)"
+
+[[targets]]
+url = "https://docs.scipy.org/doc/scipy/"
+description = "SciPy reference (no PDF for 1.9+)"
+
+[[targets]]
+url = "https://scikit-learn.org/stable/"
+description = "scikit-learn user guide (no PDF for 1.0+)"
+
+[[targets]]
+url = "https://seaborn.pydata.org/"
+description = "Seaborn statistical visualization"
+
+[[targets]]
+url = "https://www.statsmodels.org/stable/"
+description = "Statsmodels (no official PDF)"
+
+[[targets]]
+url = "https://polars.rs/docs/"
+description = "Polars fast DataFrame library"
+
+[[targets]]
+url = "https://networkx.org/documentation/stable/"
+description = "NetworkX graph algorithms"
+
+[[targets]]
+url = "https://arrow.apache.org/docs/python/"
+description = "PyArrow columnar data"
+
+# --- Deep Learning (no PDFs) ---
+
+[[targets]]
+url = "https://pytorch.org/docs/stable/"
+description = "PyTorch documentation"
+
+[[targets]]
+url = "https://pytorch.org/tutorials/"
+description = "PyTorch tutorials"
+
+# --- HuggingFace (no PDFs) ---
+
+[[targets]]
+url = "https://huggingface.co/docs/transformers/"
+description = "HuggingFace Transformers"
+
+[[targets]]
+url = "https://huggingface.co/docs/datasets/"
+description = "HuggingFace Datasets"
+
+[[targets]]
+url = "https://huggingface.co/docs/tokenizers/"
+description = "HuggingFace Tokenizers"
+
+[[targets]]
+url = "https://huggingface.co/docs/accelerate/"
+description = "HuggingFace Accelerate"
+
+[[targets]]
+url = "https://huggingface.co/docs/peft/"
+description = "HuggingFace PEFT (LoRA, QLoRA)"
+
+[[targets]]
+url = "https://huggingface.co/docs/trl/"
+description = "HuggingFace TRL (RLHF training)"
+
+# --- LLM / RAG / Agents (no PDFs) ---
+
+[[targets]]
+url = "https://python.langchain.com/docs/"
+description = "LangChain documentation"
+
+[[targets]]
+url = "https://langchain-ai.github.io/langgraph/"
+description = "LangGraph agent framework"
+
+[[targets]]
+url = "https://docs.llamaindex.ai/en/stable/"
+description = "LlamaIndex RAG framework"
+
+[[targets]]
+url = "https://docs.pydantic.dev/latest/"
+description = "Pydantic v2 data validation"
+
+[[targets]]
+url = "https://docs.trychroma.com/"
+description = "Chroma vector database"
+
+# --- Other (no PDFs) ---
+
+[[targets]]
+url = "https://docs.pymc.io/en/stable/"
+description = "PyMC Bayesian modeling"
+
+[[targets]]
+url = "https://mlflow.org/docs/latest/"
+description = "MLflow experiment tracking"
+
+[[targets]]
+url = "https://docs.wandb.ai/"
+description = "Weights & Biases experiment tracking"
+
+[[targets]]
+url = "https://click.palletsprojects.com/en/stable/"
+description = "Click CLI framework"
+
+[[targets]]
+url = "https://catboost.ai/en/docs/"
+description = "CatBoost gradient boosting"
+
+[[targets]]
+url = "https://lightning.ai/docs/pytorch/stable/"
+description = "PyTorch Lightning"
+
+[[targets]]
+url = "https://num.pyro.ai/"
+description = "NumPyro probabilistic programming"
+
+[[targets]]
+url = "https://onnxruntime.ai/docs/"
+description = "ONNX Runtime inference"
+
+[[targets]]
+url = "https://fastapi.tiangolo.com/"
+description = "FastAPI web framework"

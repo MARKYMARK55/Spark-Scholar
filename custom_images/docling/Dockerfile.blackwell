@@ -1,0 +1,69 @@
+FROM --platform=linux/arm64 nvcr.io/nvidia/cuda:13.0.1-runtime-ubuntu24.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_BREAK_SYSTEM_PACKAGES=1
+
+# Set CUDA architecture for Blackwell (sm_120)
+ENV TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;12.0" \
+    CUDAARCHS=120 \
+    CUDA_ARCHITECTURES=120 \
+    PYTORCH_JIT=0 \
+    PYTORCH_NVFUSER_DISABLE=1 \
+    CUDA_VISIBLE_DEVICES=0
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3 python3-pip python3-dev curl git \
+        libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 libxcb1 \
+        libgomp1 tesseract-ocr tesseract-ocr-eng \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install PyTorch with CUDA for ARM64
+RUN pip3 install --pre torch torchvision torchaudio \
+    --index-url https://download.pytorch.org/whl/nightly/cu128
+
+# Verify CUDA and architecture
+RUN python3 -c "import torch; print(f'PyTorch: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}'); print(f'CUDA version: {torch.version.cuda}'); print(f'Arch list: {torch.cuda.get_arch_list()}')"
+
+COPY requirements.txt .
+RUN pip3 install -r requirements.txt
+RUN pip3 install "docling>=1.14.0"
+
+# Create a wrapper script to set environment and patch CUDA
+RUN echo '#!/usr/bin/env python3' > /app/patched_server.py && \
+    echo 'import os' >> /app/patched_server.py && \
+    echo 'import torch' >> /app/patched_server.py && \
+    echo 'import sys' >> /app/patched_server.py && \
+    echo '' >> /app/patched_server.py && \
+    echo '# Force CUDA architecture' >> /app/patched_server.py && \
+    echo 'os.environ["TORCH_CUDA_ARCH_LIST"] = "8.0;8.6;8.9;9.0;12.0"' >> /app/patched_server.py && \
+    echo 'os.environ["CUDAARCHS"] = "120"' >> /app/patched_server.py && \
+    echo 'os.environ["PYTORCH_JIT"] = "0"' >> /app/patched_server.py && \
+    echo '' >> /app/patched_server.py && \
+    echo '# Patch torch.cuda.get_arch_list to include sm_120' >> /app/patched_server.py && \
+    echo 'original_get_arch_list = torch.cuda.get_arch_list' >> /app/patched_server.py && \
+    echo 'def patched_get_arch_list():' >> /app/patched_server.py && \
+    echo '    arch_list = original_get_arch_list()' >> /app/patched_server.py && \
+    echo '    if arch_list is None or len(arch_list) == 0:' >> /app/patched_server.py && \
+    echo '        return ["sm_120", "sm_89", "sm_80"]' >> /app/patched_server.py && \
+    echo '    return arch_list' >> /app/patched_server.py && \
+    echo 'torch.cuda.get_arch_list = patched_get_arch_list' >> /app/patched_server.py && \
+    echo '' >> /app/patched_server.py && \
+    echo '# Now import and run the original server' >> /app/patched_server.py && \
+    echo 'if __name__ == "__main__":' >> /app/patched_server.py && \
+    echo '    import server' >> /app/patched_server.py && \
+    echo '    import uvicorn' >> /app/patched_server.py && \
+    echo '    uvicorn.run(server.app, host="0.0.0.0", port=5001)' >> /app/patched_server.py
+
+# Copy the original server.py
+COPY server.py .
+
+EXPOSE 5001
+
+HEALTHCHECK --interval=30s --start-period=30s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:5001/health || exit 1
+
+CMD ["python3", "/app/patched_server.py"]

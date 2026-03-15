@@ -1,0 +1,94 @@
+# Infrastructure, Linux, Docker, and system administration docs
+# Essential for anyone building containers and deploying on DGX Spark
+
+collection = "docs-infra"
+tag = "infrastructure"
+depth = 3
+
+# --- Docker ---
+
+[[targets]]
+url = "https://docs.docker.com/engine/"
+description = "Docker Engine documentation"
+
+[[targets]]
+url = "https://docs.docker.com/compose/"
+description = "Docker Compose documentation"
+
+[[targets]]
+url = "https://docs.docker.com/build/"
+description = "Docker Build (BuildKit, multi-stage)"
+
+[[targets]]
+url = "https://docs.docker.com/reference/dockerfile/"
+description = "Dockerfile reference"
+
+# --- Linux ---
+
+[[targets]]
+url = "https://man7.org/linux/man-pages/"
+description = "Linux man pages"
+
+[[targets]]
+url = "https://www.kernel.org/doc/html/latest/"
+description = "Linux kernel documentation"
+
+[[targets]]
+url = "https://wiki.archlinux.org/"
+description = "Arch Wiki (comprehensive Linux reference)"
+
+[[targets]]
+url = "https://tldp.org/LDP/abs/html/"
+description = "Advanced Bash Scripting Guide"
+
+# --- Homebrew / Linuxbrew ---
+
+[[targets]]
+url = "https://docs.brew.sh/"
+description = "Homebrew documentation"
+
+# --- CUDA Programming ---
+
+[[targets]]
+url = "https://docs.nvidia.com/cuda/cuda-c-programming-guide/"
+description = "CUDA C++ Programming Guide"
+
+[[targets]]
+url = "https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/"
+description = "CUDA C++ Best Practices Guide"
+
+[[targets]]
+url = "https://docs.nvidia.com/cuda/cuda-runtime-api/"
+description = "CUDA Runtime API reference"
+
+[[targets]]
+url = "https://docs.nvidia.com/cuda/cuda-driver-api/"
+description = "CUDA Driver API reference"
+
+[[targets]]
+url = "https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/"
+description = "CUDA Toolkit release notes"
+
+# --- Container Runtime ---
+
+[[targets]]
+url = "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/overview.html"
+description = "NVIDIA Container Toolkit"
+
+# --- System Libraries ---
+
+[[targets]]
+url = "https://www.gnu.org/software/libc/manual/"
+description = "GNU C Library (glibc) manual"
+
+[[targets]]
+url = "https://www.gnu.org/software/make/manual/"
+description = "GNU Make manual"
+
+[[targets]]
+url = "https://cmake.org/cmake/help/latest/"
+description = "CMake documentation"
+
+[[targets]]
+url = "https://gcc.gnu.org/onlinedocs/"
+description = "GCC documentation"

@@ -1,0 +1,22 @@
+# docling.yml
+services:
+  docling:
+    image: docling-simple:latest
+    container_name: docling
+    restart: unless-stopped
+    ports:
+      - "8040:5001"
+    environment:
+      - CUDA_VISIBLE_DEVICES=  # Empty = no GPU
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - llm-net  # This connects to the network automatically
+
+networks:
+  llm-net:
+    external: true  # Use the existing llm-net network

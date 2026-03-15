@@ -93,15 +93,40 @@ OWUI_FILES_COLLECTION = "open-webui_files"
 # Text extraction
 # ---------------------------------------------------------------------------
 
-DOCLING_URL = os.environ.get("DOCLING_URL", "http://localhost:9099/docling/convert")
+DOCLING_URL = os.environ.get("DOCLING_URL", "http://docling:5001/convert")
+
+
+def _split_markdown_sections(md_text: str) -> list[dict]:
+    """Split Markdown text into sections by headings."""
+    sections = []
+    current_heading = ""
+    current_text: list[str] = []
+    page_num = 1
+
+    for line in md_text.split("\n"):
+        if line.startswith("#"):
+            if current_text:
+                text = "\n".join(current_text).strip()
+                if text:
+                    sections.append({"heading": current_heading, "text": text, "page_num": page_num})
+            current_heading = line.lstrip("#").strip()
+            current_text = []
+        else:
+            current_text.append(line)
+
+    if current_text:
+        text = "\n".join(current_text).strip()
+        if text:
+            sections.append({"heading": current_heading, "text": text, "page_num": page_num})
+
+    return sections
 
 
 def extract_text_docling(pdf_path: str) -> tuple[list[dict], dict]:
     """
-    Extract structured Markdown from PDF via the Docling service (pipelines container).
+    Extract structured Markdown from PDF via docling-serve HTTP API.
 
-    Calls the /docling/convert HTTP endpoint which runs Docling inside a container
-    with proper dependencies isolated from the host environment.
+    Uses the official docling-serve /v1alpha/convert/file endpoint.
 
     Returns
     -------
@@ -115,16 +140,28 @@ def extract_text_docling(pdf_path: str) -> tuple[list[dict], dict]:
         resp = httpx.post(
             DOCLING_URL,
             files={"file": (Path(pdf_path).name, f, "application/pdf")},
-            timeout=300.0,
+            timeout=600.0,
         )
     resp.raise_for_status()
     data = resp.json()
 
-    if "error" in data:
-        raise RuntimeError(f"Docling service error: {data['error']}")
+    # Handle three response formats:
+    # 1. docling-serve:  {document: {md_content: "..."}}
+    # 2. custom server:  {sections: [...], metadata: {...}}
+    # 3. docling-simple: {markdown: "..."}
+    doc = data.get("document", {})
+    md_content = doc.get("md_content", "") or data.get("markdown", "")
 
-    sections = data.get("sections", [])
-    metadata = data.get("metadata", {})
+    if md_content:
+        sections = _split_markdown_sections(md_content)
+    else:
+        sections = data.get("sections", [])
+
+    metadata = {
+        "title": doc.get("name", "") or Path(pdf_path).stem,
+        "authors": "",
+        "year": None,
+    }
 
     # Reject near-empty extractions so callers can fall through
     total_chars = sum(len(s.get("text", "")) for s in sections)
@@ -585,11 +622,14 @@ def ingest_pdfs(
     dict[str, int]
         Maps collection → number of chunks upserted.
     """
+    # Prefer QDRANT_URL env var (set by Docker) over CLI host/port
+    qdrant_url = QDRANT_URL if QDRANT_URL != "http://localhost:6333" else f"http://{qdrant_host}:{qdrant_port}"
     client = QdrantClient(
-        url=f"http://{qdrant_host}:{qdrant_port}",
+        url=qdrant_url,
         api_key=QDRANT_API_KEY,
         timeout=120,
     )
+    logger.info("Qdrant URL: %s", qdrant_url)
 
     pdf_files = sorted(Path(input_dir).rglob("*.pdf"))
     if max_files:
@@ -619,15 +659,23 @@ def ingest_pdfs(
 
             chunk_texts = [c["text"] for c in chunks]
 
-            # 3. Cluster for topic detection
-            if len(chunks) >= 5:
-                labels, _ = cluster_chunks(chunk_texts)
-                cluster_names = name_clusters_with_llm(labels, chunk_texts)
-                for i, chunk in enumerate(chunks):
-                    topic_id = int(labels[i]) if i < len(labels) else -1
-                    chunk["topic_id"] = topic_id
-                    chunk["topic_name"] = cluster_names.get(topic_id, "misc")
-            else:
+            # 3. Cluster for topic detection (optional — skipped if umap/hdbscan unavailable)
+            try:
+                if len(chunks) >= 5:
+                    labels, _ = cluster_chunks(chunk_texts)
+                    # LLM naming deferred to post-processing (avoids API errors during batch)
+                    cluster_names = {int(l): f"topic_{l}" for l in set(labels)}
+                    cluster_names[-1] = "misc"
+                    for i, chunk in enumerate(chunks):
+                        topic_id = int(labels[i]) if i < len(labels) else -1
+                        chunk["topic_id"] = topic_id
+                        chunk["topic_name"] = cluster_names.get(topic_id, "misc")
+                else:
+                    for chunk in chunks:
+                        chunk["topic_id"] = -1
+                        chunk["topic_name"] = "misc"
+            except (ImportError, Exception) as e:
+                logger.warning("  Clustering skipped: %s", e)
                 for chunk in chunks:
                     chunk["topic_id"] = -1
                     chunk["topic_name"] = "misc"
