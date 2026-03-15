@@ -1,0 +1,8 @@
+# NVIDIA cuDNN deep learning primitives
+collection = "nvidia-cudnn"
+tag = "nvidia"
+depth = -1
+
+[[targets]]
+url = "https://docs.nvidia.com/deeplearning/cudnn/"
+description = "NVIDIA cuDNN deep learning primitives"

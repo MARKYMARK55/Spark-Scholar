@@ -1,0 +1,8 @@
+# RAGAS RAG evaluation
+collection = "ragas-docs"
+tag = "llm"
+depth = -1
+
+[[targets]]
+url = "https://docs.ragas.io/en/stable/"
+description = "RAGAS RAG evaluation"

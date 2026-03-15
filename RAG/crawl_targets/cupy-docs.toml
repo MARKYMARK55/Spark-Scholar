@@ -1,0 +1,8 @@
+# CuPy GPU arrays (NumPy on CUDA)
+collection = "cupy-docs"
+tag = "nvidia"
+depth = -1
+
+[[targets]]
+url = "https://docs.cupy.dev/en/stable/"
+description = "CuPy GPU arrays"

@@ -1,0 +1,12 @@
+# GitHub platform documentation
+collection = "github-docs"
+tag = "devtools"
+depth = -1
+
+[[targets]]
+url = "https://docs.github.com/en"
+description = "GitHub documentation"
+
+[[targets]]
+url = "https://docs.github.com/en/actions"
+description = "GitHub Actions CI/CD"

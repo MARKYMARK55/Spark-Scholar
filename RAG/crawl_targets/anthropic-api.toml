@@ -1,0 +1,8 @@
+# Anthropic Claude API
+collection = "anthropic-api"
+tag = "llm"
+depth = -1
+
+[[targets]]
+url = "https://docs.anthropic.com/en/docs/"
+description = "Anthropic Claude API"

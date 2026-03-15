@@ -1,0 +1,8 @@
+# MLflow experiment tracking
+collection = "mlflow-docs"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://mlflow.org/docs/latest/"
+description = "MLflow experiment tracking"

@@ -1,0 +1,8 @@
+# uv fast Python package manager
+collection = "uv-docs"
+tag = "devtools"
+depth = -1
+
+[[targets]]
+url = "https://docs.astral.sh/uv/"
+description = "uv fast Python package manager"

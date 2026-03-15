@@ -1,0 +1,8 @@
+# CatBoost gradient boosting
+collection = "catboost-docs"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://catboost.ai/en/docs/"
+description = "CatBoost gradient boosting"

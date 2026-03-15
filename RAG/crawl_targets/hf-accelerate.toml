@@ -1,0 +1,8 @@
+# HuggingFace Accelerate
+collection = "hf-accelerate"
+tag = "huggingface"
+depth = -1
+
+[[targets]]
+url = "https://huggingface.co/docs/accelerate/"
+description = "HuggingFace Accelerate"

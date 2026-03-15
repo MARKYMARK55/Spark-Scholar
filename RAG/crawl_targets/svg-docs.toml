@@ -1,0 +1,8 @@
+# SVG graphics reference
+collection = "svg-docs"
+tag = "web-standards"
+depth = -1
+
+[[targets]]
+url = "https://developer.mozilla.org/en-US/docs/Web/SVG"
+description = "MDN SVG reference"

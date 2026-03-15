@@ -1,0 +1,12 @@
+# JavaScript / ECMAScript documentation
+collection = "javascript-docs"
+tag = "javascript"
+depth = -1
+
+[[targets]]
+url = "https://developer.mozilla.org/en-US/docs/Web/JavaScript"
+description = "MDN JavaScript reference"
+
+[[targets]]
+url = "https://developer.mozilla.org/en-US/docs/Web/API"
+description = "MDN Web APIs"

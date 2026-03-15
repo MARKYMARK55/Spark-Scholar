@@ -1,0 +1,8 @@
+# HTML specification and reference
+collection = "html-docs"
+tag = "web-standards"
+depth = -1
+
+[[targets]]
+url = "https://developer.mozilla.org/en-US/docs/Web/HTML"
+description = "MDN HTML reference"

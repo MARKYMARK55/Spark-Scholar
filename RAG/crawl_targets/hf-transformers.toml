@@ -1,0 +1,8 @@
+# HuggingFace Transformers
+collection = "hf-transformers"
+tag = "huggingface"
+depth = -1
+
+[[targets]]
+url = "https://huggingface.co/docs/transformers/"
+description = "HuggingFace Transformers"

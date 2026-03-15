@@ -1,0 +1,20 @@
+# Docker containerization platform
+collection = "docker-docs"
+tag = "infrastructure"
+depth = -1
+
+[[targets]]
+url = "https://docs.docker.com/engine/"
+description = "Docker Engine documentation"
+
+[[targets]]
+url = "https://docs.docker.com/compose/"
+description = "Docker Compose documentation"
+
+[[targets]]
+url = "https://docs.docker.com/build/"
+description = "Docker Build (BuildKit, multi-stage)"
+
+[[targets]]
+url = "https://docs.docker.com/reference/dockerfile/"
+description = "Dockerfile reference"

@@ -1,0 +1,8 @@
+# Dask parallel computing
+collection = "python-dask"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://docs.dask.org/en/stable/"
+description = "Dask parallel computing"

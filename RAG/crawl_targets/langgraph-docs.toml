@@ -1,0 +1,8 @@
+# LangGraph agent framework
+collection = "langgraph-docs"
+tag = "llm"
+depth = -1
+
+[[targets]]
+url = "https://langchain-ai.github.io/langgraph/"
+description = "LangGraph agent framework"

@@ -1,0 +1,8 @@
+# ArviZ — Bayesian model visualization and diagnostics
+collection = "arviz-docs"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://python.arviz.org/en/stable/"
+description = "ArviZ Bayesian visualization and diagnostics"

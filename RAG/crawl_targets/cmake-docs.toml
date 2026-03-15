@@ -1,0 +1,8 @@
+# CMake build system
+collection = "cmake-docs"
+tag = "infrastructure"
+depth = -1
+
+[[targets]]
+url = "https://cmake.org/cmake/help/latest/"
+description = "CMake documentation"

@@ -1,0 +1,8 @@
+# BlackJAX — MCMC sampling library for JAX
+collection = "blackjax-docs"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://blackjax-devs.github.io/blackjax/"
+description = "BlackJAX MCMC sampling for JAX"

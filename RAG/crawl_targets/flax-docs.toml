@@ -1,0 +1,8 @@
+# Flax neural network library for JAX
+collection = "flax-docs"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://flax.readthedocs.io/en/latest/"
+description = "Flax neural networks for JAX"

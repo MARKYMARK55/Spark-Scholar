@@ -1,0 +1,8 @@
+# Conda package manager
+collection = "conda-docs"
+tag = "devtools"
+depth = -1
+
+[[targets]]
+url = "https://docs.conda.io/en/latest/"
+description = "Conda package manager"

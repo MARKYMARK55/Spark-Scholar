@@ -1,0 +1,8 @@
+# Click CLI framework
+collection = "python-click"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://click.palletsprojects.com/en/stable/"
+description = "Click CLI framework"

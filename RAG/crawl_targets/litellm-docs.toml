@@ -1,0 +1,8 @@
+# LiteLLM unified LLM proxy
+collection = "litellm-docs"
+tag = "llm"
+depth = -1
+
+[[targets]]
+url = "https://docs.litellm.ai/"
+description = "LiteLLM unified LLM proxy"

@@ -1,0 +1,8 @@
+# LangSmith tracing and evaluation
+collection = "langsmith-docs"
+tag = "llm"
+depth = -1
+
+[[targets]]
+url = "https://docs.smith.langchain.com/"
+description = "LangSmith tracing and evaluation"

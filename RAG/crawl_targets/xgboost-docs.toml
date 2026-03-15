@@ -1,0 +1,8 @@
+# XGBoost gradient boosting
+collection = "xgboost-docs"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://xgboost.readthedocs.io/en/stable/"
+description = "XGBoost gradient boosting"

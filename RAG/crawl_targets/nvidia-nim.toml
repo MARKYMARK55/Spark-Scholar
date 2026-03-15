@@ -1,0 +1,8 @@
+# NVIDIA NIM microservices
+collection = "nvidia-nim"
+tag = "nvidia"
+depth = -1
+
+[[targets]]
+url = "https://docs.nvidia.com/nim/"
+description = "NVIDIA NIM microservices"

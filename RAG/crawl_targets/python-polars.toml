@@ -1,0 +1,8 @@
+# Polars fast DataFrame library
+collection = "python-polars"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://docs.pola.rs/"
+description = "Polars fast DataFrame library"

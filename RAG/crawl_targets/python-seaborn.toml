@@ -1,0 +1,8 @@
+# Seaborn statistical visualization
+collection = "python-seaborn"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://seaborn.pydata.org/"
+description = "Seaborn statistical visualization"

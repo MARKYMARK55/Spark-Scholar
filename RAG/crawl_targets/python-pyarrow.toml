@@ -1,0 +1,8 @@
+# PyArrow columnar data
+collection = "python-pyarrow"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://arrow.apache.org/docs/python/"
+description = "PyArrow columnar data"

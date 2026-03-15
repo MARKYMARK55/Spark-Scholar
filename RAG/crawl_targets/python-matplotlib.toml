@@ -1,0 +1,8 @@
+# Matplotlib plotting library
+collection = "python-matplotlib"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://matplotlib.org/stable/"
+description = "Matplotlib plotting library"

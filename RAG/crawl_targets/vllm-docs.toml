@@ -1,0 +1,8 @@
+# vLLM inference engine
+collection = "vllm-docs"
+tag = "llm"
+depth = -1
+
+[[targets]]
+url = "https://docs.vllm.ai/en/latest/"
+description = "vLLM inference engine"

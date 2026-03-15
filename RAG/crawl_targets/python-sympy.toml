@@ -1,0 +1,8 @@
+# SymPy symbolic mathematics
+collection = "python-sympy"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://docs.sympy.org/latest/"
+description = "SymPy symbolic mathematics"

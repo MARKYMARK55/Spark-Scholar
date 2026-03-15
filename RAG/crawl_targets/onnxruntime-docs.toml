@@ -1,0 +1,8 @@
+# ONNX Runtime inference
+collection = "onnxruntime-docs"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://onnxruntime.ai/docs/"
+description = "ONNX Runtime inference"

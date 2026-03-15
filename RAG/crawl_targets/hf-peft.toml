@@ -1,0 +1,8 @@
+# HuggingFace PEFT (LoRA, QLoRA)
+collection = "hf-peft"
+tag = "huggingface"
+depth = -1
+
+[[targets]]
+url = "https://huggingface.co/docs/peft/"
+description = "HuggingFace PEFT (LoRA, QLoRA)"

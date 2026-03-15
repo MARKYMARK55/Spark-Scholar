@@ -1,0 +1,8 @@
+# Numba JIT compiler (CPU + CUDA)
+collection = "numba-docs"
+tag = "nvidia"
+depth = -1
+
+[[targets]]
+url = "https://numba.readthedocs.io/en/stable/"
+description = "Numba JIT compiler"

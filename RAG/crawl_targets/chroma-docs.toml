@@ -1,0 +1,8 @@
+# Chroma vector database
+collection = "chroma-docs"
+tag = "vectordb"
+depth = -1
+
+[[targets]]
+url = "https://docs.trychroma.com/"
+description = "Chroma vector database"

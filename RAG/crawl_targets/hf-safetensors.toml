@@ -1,0 +1,8 @@
+# HuggingFace Safetensors format
+collection = "hf-safetensors"
+tag = "huggingface"
+depth = -1
+
+[[targets]]
+url = "https://huggingface.co/docs/safetensors/"
+description = "Safetensors format"

@@ -1,0 +1,8 @@
+# Git version control
+collection = "git-docs"
+tag = "devtools"
+depth = -1
+
+[[targets]]
+url = "https://git-scm.com/doc"
+description = "Git version control"

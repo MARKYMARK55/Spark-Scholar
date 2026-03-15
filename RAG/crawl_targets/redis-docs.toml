@@ -1,0 +1,8 @@
+# Redis in-memory data store
+collection = "redis-docs"
+tag = "web"
+depth = -1
+
+[[targets]]
+url = "https://redis.io/docs/"
+description = "Redis documentation"

@@ -1,0 +1,8 @@
+# hmmlearn — Hidden Markov Models in Python
+collection = "hmmlearn-docs"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://hmmlearn.readthedocs.io/en/stable/"
+description = "hmmlearn Hidden Markov Models"

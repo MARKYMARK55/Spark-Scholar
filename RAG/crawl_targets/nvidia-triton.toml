@@ -1,0 +1,8 @@
+# NVIDIA Triton Inference Server
+collection = "nvidia-triton"
+tag = "nvidia"
+depth = -1
+
+[[targets]]
+url = "https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/"
+description = "NVIDIA Triton Inference Server"

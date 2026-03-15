@@ -1,0 +1,8 @@
+# NVIDIA TensorRT optimization
+collection = "nvidia-tensorrt"
+tag = "nvidia"
+depth = -1
+
+[[targets]]
+url = "https://docs.nvidia.com/deeplearning/tensorrt/"
+description = "NVIDIA TensorRT optimization"

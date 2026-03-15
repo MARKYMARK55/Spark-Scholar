@@ -1,0 +1,12 @@
+# Stan / CmdStanPy — Bayesian statistical modeling
+collection = "stan-docs"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://mc-stan.org/docs/"
+description = "Stan documentation"
+
+[[targets]]
+url = "https://mc-stan.org/cmdstanpy/"
+description = "CmdStanPy Python interface"

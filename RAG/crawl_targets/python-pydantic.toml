@@ -1,0 +1,8 @@
+# Pydantic v2 data validation
+collection = "python-pydantic"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://docs.pydantic.dev/latest/"
+description = "Pydantic v2 data validation"

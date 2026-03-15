@@ -1,0 +1,8 @@
+# Celery distributed task queue
+collection = "celery-docs"
+tag = "web"
+depth = -1
+
+[[targets]]
+url = "https://docs.celeryq.dev/en/stable/"
+description = "Celery distributed task queue"

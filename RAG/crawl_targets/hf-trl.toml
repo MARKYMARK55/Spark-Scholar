@@ -1,0 +1,8 @@
+# HuggingFace TRL (RLHF training)
+collection = "hf-trl"
+tag = "huggingface"
+depth = -1
+
+[[targets]]
+url = "https://huggingface.co/docs/trl/"
+description = "HuggingFace TRL (RLHF training)"

@@ -1,0 +1,8 @@
+# PostgreSQL relational database
+collection = "postgresql-docs"
+tag = "web"
+depth = -1
+
+[[targets]]
+url = "https://www.postgresql.org/docs/current/"
+description = "PostgreSQL documentation"

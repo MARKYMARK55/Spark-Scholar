@@ -1,0 +1,8 @@
+# PyMC Bayesian modeling
+collection = "pymc-docs"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://docs.pymc.io/en/stable/"
+description = "PyMC Bayesian modeling"

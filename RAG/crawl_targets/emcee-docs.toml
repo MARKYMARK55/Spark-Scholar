@@ -1,0 +1,8 @@
+# emcee — MCMC ensemble sampler
+collection = "emcee-docs"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://emcee.readthedocs.io/en/stable/"
+description = "emcee MCMC ensemble sampler"

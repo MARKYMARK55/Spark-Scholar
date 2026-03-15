@@ -1,0 +1,8 @@
+# scikit-learn machine learning
+collection = "python-sklearn"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://scikit-learn.org/stable/"
+description = "scikit-learn user guide"

@@ -1,0 +1,8 @@
+# JAX numerical computing with autograd and XLA
+collection = "jax-docs"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://jax.readthedocs.io/en/latest/"
+description = "JAX documentation"

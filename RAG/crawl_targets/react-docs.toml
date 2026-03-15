@@ -1,0 +1,12 @@
+# React UI framework
+collection = "react-docs"
+tag = "javascript"
+depth = -1
+
+[[targets]]
+url = "https://react.dev/reference/react"
+description = "React API reference"
+
+[[targets]]
+url = "https://react.dev/learn"
+description = "React learning guide"

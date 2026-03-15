@@ -1,22 +1,45 @@
-# docling.yml
 services:
   docling:
-    image: docling-simple:latest
+    image: ghcr.io/docling-project/docling-serve-cu130:main
     container_name: docling
     restart: unless-stopped
     ports:
       - "8040:5001"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     environment:
-      - CUDA_VISIBLE_DEVICES=  # Empty = no GPU
+      DOCLING_SERVE_ENABLE_UI: "false"
+      DOCLING_SERVE_ENABLE_REMOTE_SERVICES: "true"
+      DOCLING_SERVE_ALLOW_CUSTOM_VLM_CONFIG: "true"
+      DOCLING_SERVE_ALLOW_CUSTOM_PICTURE_DESCRIPTION_CONFIG: "true"
+      DOCLING_SERVE_ALLOW_CUSTOM_CODE_FORMULA_CONFIG: "true"
+      DOCLING_SERVE_MAX_SYNC_WAIT: "600"
+      DOCLING_SERVE_ENG_LOC_NUM_WORKERS: "4"
+      DOCLING_NUM_THREADS: "4"
+      UVICORN_WORKERS: "1"
+      DOCLING_DEVICE: cuda
+      DOCLING_PERF_PAGE_BATCH_SIZE: "16"
+      DOCLING_SERVE_OCR_BATCH_SIZE: "2"
+      DOCLING_SERVE_LAYOUT_BATCH_SIZE: "16"
+      DOCLING_SERVE_TABLE_BATCH_SIZE: "4"
+    # No volume mounts for models — use container's bundled models
+    # Volume mounts would override with empty dirs and break startup
+    command: >
+      bash -c "docling-serve run"
+    networks:
+      - llm-net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
-    networks:
-      - llm-net  # This connects to the network automatically
+      start_period: 60s
 
 networks:
   llm-net:
-    external: true  # Use the existing llm-net network
+    external: true

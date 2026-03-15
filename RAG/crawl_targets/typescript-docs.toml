@@ -1,0 +1,8 @@
+# TypeScript documentation
+collection = "typescript-docs"
+tag = "javascript"
+depth = -1
+
+[[targets]]
+url = "https://www.typescriptlang.org/docs/"
+description = "TypeScript documentation"

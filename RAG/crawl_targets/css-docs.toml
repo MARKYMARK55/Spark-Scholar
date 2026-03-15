@@ -1,0 +1,8 @@
+# CSS specification and reference
+collection = "css-docs"
+tag = "web-standards"
+depth = -1
+
+[[targets]]
+url = "https://developer.mozilla.org/en-US/docs/Web/CSS"
+description = "MDN CSS reference"

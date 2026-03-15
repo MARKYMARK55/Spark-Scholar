@@ -1,0 +1,8 @@
+# HuggingFace Tokenizers
+collection = "hf-tokenizers"
+tag = "huggingface"
+depth = -1
+
+[[targets]]
+url = "https://huggingface.co/docs/tokenizers/"
+description = "HuggingFace Tokenizers"

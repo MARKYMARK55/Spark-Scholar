@@ -1,0 +1,8 @@
+# LightGBM gradient boosting
+collection = "lightgbm-docs"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://lightgbm.readthedocs.io/en/stable/"
+description = "LightGBM gradient boosting"

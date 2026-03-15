@@ -1,0 +1,8 @@
+# HuggingFace Hub
+collection = "hf-hub"
+tag = "huggingface"
+depth = -1
+
+[[targets]]
+url = "https://huggingface.co/docs/hub/"
+description = "HuggingFace Hub"

@@ -1,0 +1,8 @@
+# OpenAI API documentation
+collection = "openai-api"
+tag = "llm"
+depth = -1
+
+[[targets]]
+url = "https://platform.openai.com/docs/"
+description = "OpenAI API documentation"

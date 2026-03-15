@@ -1,0 +1,8 @@
+# SQLAlchemy ORM
+collection = "sqlalchemy-docs"
+tag = "web"
+depth = -1
+
+[[targets]]
+url = "https://docs.sqlalchemy.org/en/latest/"
+description = "SQLAlchemy ORM"

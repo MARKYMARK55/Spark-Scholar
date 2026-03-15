@@ -1,0 +1,8 @@
+# Homebrew package manager
+collection = "homebrew-docs"
+tag = "infrastructure"
+depth = -1
+
+[[targets]]
+url = "https://docs.brew.sh/"
+description = "Homebrew documentation"

@@ -1,0 +1,20 @@
+# Rust programming language
+collection = "rust-docs"
+tag = "rust"
+depth = -1
+
+[[targets]]
+url = "https://doc.rust-lang.org/book/"
+description = "The Rust Programming Language (book)"
+
+[[targets]]
+url = "https://doc.rust-lang.org/std/"
+description = "Rust standard library reference"
+
+[[targets]]
+url = "https://doc.rust-lang.org/reference/"
+description = "Rust language reference"
+
+[[targets]]
+url = "https://doc.rust-lang.org/cargo/"
+description = "Cargo package manager"

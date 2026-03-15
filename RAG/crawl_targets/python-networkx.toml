@@ -1,0 +1,8 @@
+# NetworkX graph algorithms
+collection = "python-networkx"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://networkx.org/documentation/stable/"
+description = "NetworkX graph algorithms"

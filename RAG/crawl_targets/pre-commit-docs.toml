@@ -1,0 +1,8 @@
+# pre-commit hook framework
+collection = "pre-commit-docs"
+tag = "devtools"
+depth = -1
+
+[[targets]]
+url = "https://pre-commit.com/"
+description = "pre-commit hook framework"

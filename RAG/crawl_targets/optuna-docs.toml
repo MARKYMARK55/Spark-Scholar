@@ -1,0 +1,8 @@
+# Optuna hyperparameter optimization
+collection = "optuna-docs"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://optuna.readthedocs.io/en/stable/"
+description = "Optuna hyperparameter optimization"

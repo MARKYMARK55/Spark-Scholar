@@ -247,6 +247,49 @@ def should_skip_url(url: str) -> bool:
     return any(lower.endswith(pat) or pat in lower for pat in SKIP_URL_PATTERNS)
 
 
+# Regex patterns matching versioned path segments.
+# Used to detect URLs pointing to old/pinned documentation versions.
+_OLD_VERSION_PATTERNS: list[re.Pattern] = [
+    # /v1.2.3/, /0.9/, /2.3.1-rc1/, /v0.991/
+    re.compile(r"/v?\d+\.\d+(?:\.\d+)?(?:[-.\w]*)/", re.IGNORECASE),
+    # /14/, /20/ — bare major version numbers (2+ digits to avoid /3/ false positives)
+    re.compile(r"/\d{2,}/", re.IGNORECASE),
+    # /release_2.0.0/, /version-1.0/
+    re.compile(r"/(?:release[_-]|version[_-])[\d][\d._-]*/", re.IGNORECASE),
+    # /scipy-1.9.0/, /numpy-1.24/ — package name + version in path segment
+    re.compile(r"/[a-zA-Z][\w-]*-\d+\.\d+(?:\.\d+)?/", re.IGNORECASE),
+]
+
+
+def _is_old_version_url(url: str, seed_url: str) -> bool:
+    """
+    Return True if *url* looks like it points to an old/pinned version of the
+    docs rather than the latest.  Only rejects URLs whose versioned path segment
+    differs from the seed URL's version segment.
+
+    This prevents the crawler from following "Other versions" sidebar links
+    while still allowing the seed's own version path (e.g. /en/stable/ or /3/).
+    """
+    url_path = urlparse(url).path
+    seed_path = urlparse(seed_url).path
+
+    for pattern in _OLD_VERSION_PATTERNS:
+        match = pattern.search(url_path)
+        if not match:
+            continue
+
+        version_seg = match.group(0)  # e.g. "/v1.2.3/"
+
+        # If the seed URL contains this exact segment, it's the version we want
+        if version_seg in seed_path:
+            continue
+
+        # This URL has a versioned segment not present in the seed → old version
+        return True
+
+    return False
+
+
 def same_domain_and_prefix(url: str, seed_parsed: "ParseResult") -> bool:  # noqa: F821
     """
     Return True when *url* is on the same netloc as *seed_parsed* and its
@@ -752,8 +795,8 @@ def crawl(
 
         yield url
 
-        if current_depth >= depth:
-            # Don't extract links from this page
+        if depth >= 0 and current_depth >= depth:
+            # Don't extract links from this page (depth=-1 means unlimited)
             continue
 
         # Fetch to discover child links
@@ -776,6 +819,9 @@ def crawl(
             if not same_domain_and_prefix(norm, seed_parsed):
                 continue
             if should_skip_url(norm):
+                continue
+            if _is_old_version_url(norm, seed_url):
+                logger.debug("Skipping old-version URL: %s", norm)
                 continue
 
             visited.add(norm)
@@ -1008,7 +1054,7 @@ def main() -> None:  # noqa: C901  (complexity is inherent to CLI orchestration)
         type=int,
         default=1,
         metavar="INT",
-        help="Crawl depth: 0=single page, 1=follow links from seed, 2=two hops",
+        help="Crawl depth: -1=unlimited, 0=single page, 1=follow links from seed, 2=two hops",
     )
     parser.add_argument(
         "--sitemap",
@@ -1090,7 +1136,7 @@ def main() -> None:  # noqa: C901  (complexity is inherent to CLI orchestration)
             args.collection = cfg.get("collection")
         if args.tag is None:
             args.tag = cfg.get("tag")
-        if args.depth == 1 and "depth" in cfg:  # only override default
+        if "depth" in cfg:  # TOML depth always takes precedence
             args.depth = cfg["depth"]
 
         # Build a temporary URL file from TOML targets

@@ -1,0 +1,8 @@
+# Docling PDF conversion
+collection = "docling-docs"
+tag = "llm"
+depth = -1
+
+[[targets]]
+url = "https://ds4sd.github.io/docling/"
+description = "Docling PDF conversion"

@@ -1,0 +1,8 @@
+# Weights & Biases experiment tracking
+collection = "wandb-docs"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://docs.wandb.ai/"
+description = "Weights & Biases experiment tracking"

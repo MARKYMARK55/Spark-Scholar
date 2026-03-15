@@ -1,9 +1,7 @@
-# NVIDIA RAPIDS and GPU computing — HTML crawl targets
-# (Numba and CuPy have PDFs on ReadTheDocs, rest is HTML-only)
-
-collection = "docs-nvidia-rapids"
+# NVIDIA RAPIDS GPU data science
+collection = "nvidia-rapids"
 tag = "nvidia"
-depth = 3
+depth = -1
 
 [[targets]]
 url = "https://docs.rapids.ai/api/cudf/stable/"
@@ -20,23 +18,3 @@ description = "cuGraph GPU graph analytics"
 [[targets]]
 url = "https://docs.rapids.ai/install/"
 description = "RAPIDS installation guide"
-
-[[targets]]
-url = "https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/"
-description = "NVIDIA Triton Inference Server"
-
-[[targets]]
-url = "https://docs.nvidia.com/deeplearning/tensorrt/"
-description = "NVIDIA TensorRT optimization"
-
-[[targets]]
-url = "https://docs.nvidia.com/deeplearning/nemo/user-guide/docs/en/stable/"
-description = "NVIDIA NeMo LLM training"
-
-[[targets]]
-url = "https://docs.nvidia.com/nim/"
-description = "NVIDIA NIM microservices"
-
-[[targets]]
-url = "https://docs.nvidia.com/cuda/"
-description = "NVIDIA CUDA toolkit documentation"

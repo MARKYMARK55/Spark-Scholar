@@ -1,0 +1,8 @@
+# Python 3 standard library documentation
+collection = "python-stdlib"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://docs.python.org/3/"
+description = "Python 3 standard library"

@@ -1,0 +1,8 @@
+# SciPy scientific computing
+collection = "python-scipy"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://docs.scipy.org/doc/scipy/"
+description = "SciPy reference"

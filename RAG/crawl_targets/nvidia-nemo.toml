@@ -1,0 +1,8 @@
+# NVIDIA NeMo LLM training
+collection = "nvidia-nemo"
+tag = "nvidia"
+depth = -1
+
+[[targets]]
+url = "https://docs.nvidia.com/deeplearning/nemo/user-guide/docs/en/stable/"
+description = "NVIDIA NeMo LLM training"

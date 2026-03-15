@@ -1,0 +1,8 @@
+# pomegranate — probabilistic models (HMMs, Bayes nets, GMMs)
+collection = "pomegranate-docs"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://pomegranate.readthedocs.io/en/stable/"
+description = "pomegranate probabilistic models"

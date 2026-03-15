@@ -1,0 +1,12 @@
+# Bash shell scripting
+collection = "bash-docs"
+tag = "infrastructure"
+depth = -1
+
+[[targets]]
+url = "https://www.gnu.org/software/bash/manual/"
+description = "Bash reference manual"
+
+[[targets]]
+url = "https://tldp.org/LDP/abs/html/"
+description = "Advanced Bash Scripting Guide"

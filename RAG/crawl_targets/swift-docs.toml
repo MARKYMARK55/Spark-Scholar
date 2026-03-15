@@ -1,0 +1,20 @@
+# Swift programming language and Apple development
+collection = "swift-docs"
+tag = "apple"
+depth = -1
+
+[[targets]]
+url = "https://docs.swift.org/swift-book/documentation/the-swift-programming-language/"
+description = "The Swift Programming Language"
+
+[[targets]]
+url = "https://developer.apple.com/documentation/swiftui"
+description = "SwiftUI framework"
+
+[[targets]]
+url = "https://developer.apple.com/documentation/uikit"
+description = "UIKit framework"
+
+[[targets]]
+url = "https://developer.apple.com/documentation/foundation"
+description = "Foundation framework"

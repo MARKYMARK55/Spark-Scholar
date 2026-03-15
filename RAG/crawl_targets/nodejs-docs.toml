@@ -1,0 +1,8 @@
+# Node.js runtime documentation
+collection = "nodejs-docs"
+tag = "javascript"
+depth = -1
+
+[[targets]]
+url = "https://nodejs.org/docs/latest/api/"
+description = "Node.js API documentation"

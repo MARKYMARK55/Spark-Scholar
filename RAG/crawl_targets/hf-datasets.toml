@@ -1,0 +1,8 @@
+# HuggingFace Datasets
+collection = "hf-datasets"
+tag = "huggingface"
+depth = -1
+
+[[targets]]
+url = "https://huggingface.co/docs/datasets/"
+description = "HuggingFace Datasets"

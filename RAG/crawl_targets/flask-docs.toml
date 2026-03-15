@@ -1,0 +1,8 @@
+# Flask web framework
+collection = "flask-docs"
+tag = "web"
+depth = -1
+
+[[targets]]
+url = "https://flask.palletsprojects.com/en/stable/"
+description = "Flask web framework"

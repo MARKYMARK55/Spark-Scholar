@@ -1,0 +1,8 @@
+# Ruff Python linter
+collection = "ruff-docs"
+tag = "devtools"
+depth = -1
+
+[[targets]]
+url = "https://docs.astral.sh/ruff/"
+description = "Ruff Python linter"

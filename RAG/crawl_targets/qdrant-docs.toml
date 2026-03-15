@@ -1,9 +1,7 @@
 # Qdrant vector database documentation
-# Re-populate the Qdrant_Web_Doc collection (lost during back-embedding)
-
-collection = "Qdrant_Web_Doc"
-tag = "qdrant"
-depth = 3
+collection = "qdrant-docs"
+tag = "vectordb"
+depth = -1
 
 [[targets]]
 url = "https://qdrant.tech/documentation/"

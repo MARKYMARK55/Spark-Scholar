@@ -1,0 +1,8 @@
+# VS Code editor documentation
+collection = "vscode-docs"
+tag = "devtools"
+depth = -1
+
+[[targets]]
+url = "https://code.visualstudio.com/docs"
+description = "VS Code documentation"

@@ -1,0 +1,8 @@
+# NumPy numerical computing
+collection = "python-numpy"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://numpy.org/doc/stable/"
+description = "NumPy reference"

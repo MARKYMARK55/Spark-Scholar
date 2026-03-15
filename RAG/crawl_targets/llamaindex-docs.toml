@@ -1,0 +1,8 @@
+# LlamaIndex RAG framework
+collection = "llamaindex-docs"
+tag = "llm"
+depth = -1
+
+[[targets]]
+url = "https://docs.llamaindex.ai/en/stable/"
+description = "LlamaIndex RAG framework"

@@ -1,0 +1,8 @@
+# LangChain framework
+collection = "langchain-docs"
+tag = "llm"
+depth = -1
+
+[[targets]]
+url = "https://python.langchain.com/docs/"
+description = "LangChain documentation"

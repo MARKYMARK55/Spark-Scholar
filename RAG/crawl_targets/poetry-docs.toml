@@ -1,0 +1,8 @@
+# Poetry dependency management
+collection = "poetry-docs"
+tag = "devtools"
+depth = -1
+
+[[targets]]
+url = "https://python-poetry.org/docs/"
+description = "Poetry dependency management"

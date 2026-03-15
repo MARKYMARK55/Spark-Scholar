@@ -1,0 +1,8 @@
+# Weaviate vector database
+collection = "weaviate-docs"
+tag = "vectordb"
+depth = -1
+
+[[targets]]
+url = "https://weaviate.io/developers/weaviate"
+description = "Weaviate vector database"

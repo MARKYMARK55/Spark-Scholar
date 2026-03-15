@@ -1,0 +1,8 @@
+# Pandas data analysis
+collection = "python-pandas"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://pandas.pydata.org/docs/"
+description = "Pandas documentation"

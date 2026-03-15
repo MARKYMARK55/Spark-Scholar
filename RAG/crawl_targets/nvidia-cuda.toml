@@ -1,0 +1,20 @@
+# NVIDIA CUDA programming documentation
+collection = "nvidia-cuda"
+tag = "nvidia"
+depth = -1
+
+[[targets]]
+url = "https://docs.nvidia.com/cuda/cuda-c-programming-guide/"
+description = "CUDA C++ Programming Guide"
+
+[[targets]]
+url = "https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/"
+description = "CUDA C++ Best Practices Guide"
+
+[[targets]]
+url = "https://docs.nvidia.com/cuda/cuda-runtime-api/"
+description = "CUDA Runtime API reference"
+
+[[targets]]
+url = "https://docs.nvidia.com/cuda/cuda-driver-api/"
+description = "CUDA Driver API reference"

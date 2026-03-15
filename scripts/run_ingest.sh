@@ -47,7 +47,7 @@ exec docker run --rm \
   -e BGE_M3_SPARSE_URL=http://bge-m3-sparse-embedder:8001 \
   -e RERANKER_URL=http://bge-m3-reranker:8000/rerank \
   -e BGE_M3_API_KEY=simple-api-key \
-  -e DOCLING_URL=http://docling:5001/convert \
+  -e DOCLING_URL=http://docling:5001/v1/convert/file \
   -e PYTHONPATH=/workspace \
   "$IMAGE" \
   "$@"

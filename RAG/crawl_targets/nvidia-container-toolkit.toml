@@ -1,0 +1,8 @@
+# NVIDIA Container Toolkit
+collection = "nvidia-container-toolkit"
+tag = "nvidia"
+depth = -1
+
+[[targets]]
+url = "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/overview.html"
+description = "NVIDIA Container Toolkit"

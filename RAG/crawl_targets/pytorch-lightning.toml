@@ -1,0 +1,8 @@
+# PyTorch Lightning high-level training
+collection = "pytorch-lightning"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://lightning.ai/docs/pytorch/stable/"
+description = "PyTorch Lightning"

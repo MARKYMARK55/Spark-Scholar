@@ -1,0 +1,12 @@
+# PyTorch deep learning framework
+collection = "pytorch-docs"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://pytorch.org/docs/stable/"
+description = "PyTorch documentation"
+
+[[targets]]
+url = "https://pytorch.org/tutorials/"
+description = "PyTorch tutorials"

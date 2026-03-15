@@ -1,0 +1,8 @@
+# pytest testing framework
+collection = "python-pytest"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://docs.pytest.org/en/stable/"
+description = "pytest testing framework"

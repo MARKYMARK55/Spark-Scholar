@@ -1,0 +1,8 @@
+# JupyterLab documentation
+collection = "jupyterlab-docs"
+tag = "devtools"
+depth = -1
+
+[[targets]]
+url = "https://jupyterlab.readthedocs.io/en/stable/"
+description = "JupyterLab documentation"

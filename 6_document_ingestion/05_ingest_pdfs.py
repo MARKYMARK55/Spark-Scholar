@@ -93,11 +93,26 @@ OWUI_FILES_COLLECTION = "open-webui_files"
 # Text extraction
 # ---------------------------------------------------------------------------
 
-DOCLING_URL = os.environ.get("DOCLING_URL", "http://docling:5001/convert")
+DOCLING_URL = os.environ.get("DOCLING_URL", "http://docling:5001/v1/convert/file")
+
+
+def _strip_base64_images(md_text: str) -> str:
+    """Remove base64-encoded image data from Markdown.
+
+    Docling embeds figures as inline base64 PNGs which pollute chunks.
+    Strips both ``![...](data:image/...)`` syntax and bare base64 blobs.
+    """
+    import re
+    # Remove markdown image tags with data URIs
+    md_text = re.sub(r'!\[[^\]]*\]\(data:image/[^)]+\)', '<!-- image -->', md_text)
+    # Remove bare base64 blobs (100+ chars of base64 alphabet)
+    md_text = re.sub(r'[A-Za-z0-9+/=]{100,}', '', md_text)
+    return md_text
 
 
 def _split_markdown_sections(md_text: str) -> list[dict]:
     """Split Markdown text into sections by headings."""
+    md_text = _strip_base64_images(md_text)
     sections = []
     current_heading = ""
     current_text: list[str] = []
@@ -139,7 +154,7 @@ def extract_text_docling(pdf_path: str) -> tuple[list[dict], dict]:
     with open(pdf_path, "rb") as f:
         resp = httpx.post(
             DOCLING_URL,
-            files={"file": (Path(pdf_path).name, f, "application/pdf")},
+            files={"files": (Path(pdf_path).name, f, "application/pdf")},
             timeout=600.0,
         )
     resp.raise_for_status()

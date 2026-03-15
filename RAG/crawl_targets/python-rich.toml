@@ -1,0 +1,8 @@
+# Rich terminal formatting
+collection = "python-rich"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://rich.readthedocs.io/en/stable/"
+description = "Rich terminal formatting"

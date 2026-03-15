@@ -1,0 +1,8 @@
+# h5py HDF5 interface
+collection = "python-h5py"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://docs.h5py.org/en/stable/"
+description = "h5py HDF5 interface"

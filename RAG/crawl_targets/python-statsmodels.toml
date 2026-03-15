@@ -1,0 +1,8 @@
+# Statsmodels statistical modeling
+collection = "python-statsmodels"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://www.statsmodels.org/stable/"
+description = "Statsmodels statistical modeling"

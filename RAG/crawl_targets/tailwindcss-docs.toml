@@ -1,0 +1,8 @@
+# Tailwind CSS utility framework
+collection = "tailwindcss-docs"
+tag = "web-standards"
+depth = -1
+
+[[targets]]
+url = "https://tailwindcss.com/docs"
+description = "Tailwind CSS documentation"

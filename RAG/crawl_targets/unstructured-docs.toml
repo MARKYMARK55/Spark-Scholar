@@ -1,0 +1,8 @@
+# Unstructured document parsing
+collection = "unstructured-docs"
+tag = "llm"
+depth = -1
+
+[[targets]]
+url = "https://docs.unstructured.io/open-source/introduction/overview"
+description = "Unstructured document parsing"

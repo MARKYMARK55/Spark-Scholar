@@ -1,0 +1,8 @@
+# FastAPI web framework
+collection = "fastapi-docs"
+tag = "web"
+depth = -1
+
+[[targets]]
+url = "https://fastapi.tiangolo.com/"
+description = "FastAPI web framework"

@@ -1,0 +1,8 @@
+# NumPyro probabilistic programming
+collection = "numpyro-docs"
+tag = "ml"
+depth = -1
+
+[[targets]]
+url = "https://num.pyro.ai/"
+description = "NumPyro probabilistic programming"

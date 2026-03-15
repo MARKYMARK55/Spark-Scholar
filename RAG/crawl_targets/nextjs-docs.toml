@@ -1,0 +1,8 @@
+# Next.js React framework
+collection = "nextjs-docs"
+tag = "javascript"
+depth = -1
+
+[[targets]]
+url = "https://nextjs.org/docs"
+description = "Next.js documentation"

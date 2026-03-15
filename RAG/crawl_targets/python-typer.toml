@@ -1,0 +1,8 @@
+# Typer CLI framework
+collection = "python-typer"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://typer.tiangolo.com/"
+description = "Typer CLI framework"

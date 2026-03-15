@@ -1,0 +1,8 @@
+# Joblib parallel computing and caching
+collection = "python-joblib"
+tag = "python"
+depth = -1
+
+[[targets]]
+url = "https://joblib.readthedocs.io/en/stable/"
+description = "Joblib parallel computing and caching"

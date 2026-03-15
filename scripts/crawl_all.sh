@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# Crawl all TOML targets sequentially inside the pipelines container
+# Crawl all TOML targets sequentially inside ONE container
 # =============================================================================
 # Usage:
 #   ./scripts/crawl_all.sh           # crawl all configs
@@ -15,57 +15,75 @@ TOML_DIR="$PROJECT_DIR/RAG/crawl_targets"
 
 IMAGE="pipeline-deps:latest"
 NETWORK="llm-net"
+CONTAINER_NAME="spark-crawl-docs"
 
 NOTIFY=false
 if [[ "${1:-}" == "--notify" ]]; then
     NOTIFY=true
 fi
 
+# Build list of TOML files
+TOMLS=()
+for toml in "$TOML_DIR"/*.toml; do
+    TOMLS+=("$(basename "$toml")")
+done
+
 echo "=== Crawling all TOML targets ==="
 echo "    Config dir: $TOML_DIR"
+echo "    Targets: ${#TOMLS[@]}"
 echo "    Image: $IMAGE"
 echo ""
 
-TOTAL=0
-OK=0
-FAIL=0
+# Remove any stale container
+docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
 
-for toml in "$TOML_DIR"/*.toml; do
-    name=$(basename "$toml")
-    echo ""
-    echo "============================================================"
-    echo "  Crawling: $name"
-    echo "============================================================"
+PYCMD='
+import subprocess, sys, time
 
-    if docker run --rm \
-        --entrypoint python3 \
-        --network "$NETWORK" \
-        -v "$PROJECT_DIR":/workspace \
-        -w /workspace \
-        -e QDRANT_URL=http://qdrant:6333 \
-        -e QDRANT_API_KEY=simple-api-key \
-        -e BGE_M3_DENSE_URL=http://bge-m3-dense-embedder:8000 \
-        -e BGE_M3_SPARSE_URL=http://bge-m3-sparse-embedder:8001 \
-        -e BGE_M3_API_KEY=simple-api-key \
-        -e PYTHONPATH=/workspace \
-        "$IMAGE" \
-        6_document_ingestion/07_ingest_html_docs.py --config "RAG/crawl_targets/$name" 2>&1; then
-        echo "  OK: $name"
-        OK=$((OK + 1))
-    else
-        echo "  FAILED: $name"
-        FAIL=$((FAIL + 1))
-    fi
-    TOTAL=$((TOTAL + 1))
-done
+configs = sys.argv[1:]
+ok, fail = 0, 0
 
-echo ""
-echo "============================================================"
-echo "  CRAWL SUMMARY: $OK/$TOTAL succeeded, $FAIL failed"
-echo "============================================================"
+for name in configs:
+    print(f"\n{'='*60}")
+    print(f"  Crawling: {name}")
+    print(f"  Started: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"{'='*60}", flush=True)
+
+    try:
+        subprocess.run([
+            sys.executable, "6_document_ingestion/07_ingest_html_docs.py",
+            "--config", f"RAG/crawl_targets/{name}",
+        ], check=True)
+        print(f"  OK: {name}")
+        ok += 1
+    except subprocess.CalledProcessError:
+        print(f"  FAILED: {name}")
+        fail += 1
+
+total = ok + fail
+print(f"\n{'='*60}")
+print(f"  CRAWL SUMMARY: {ok}/{total} succeeded, {fail} failed")
+print(f"  Finished: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+print(f"{'='*60}")
+'
+
+docker run --rm \
+    --name "$CONTAINER_NAME" \
+    --entrypoint python3 \
+    --network "$NETWORK" \
+    -v "$PROJECT_DIR":/workspace \
+    -w /workspace \
+    -e QDRANT_URL=http://qdrant:6333 \
+    -e QDRANT_API_KEY=simple-api-key \
+    -e BGE_M3_DENSE_URL=http://bge-m3-dense-embedder:8000 \
+    -e BGE_M3_SPARSE_URL=http://bge-m3-sparse-embedder:8001 \
+    -e BGE_M3_API_KEY=simple-api-key \
+    -e PYTHONPATH=/workspace \
+    "$IMAGE" \
+    -c "$PYCMD" "${TOMLS[@]}"
 
 if $NOTIFY; then
     "$SCRIPT_DIR/notify.sh" \
         "Doc Crawl Complete" \
-        "Crawled $TOTAL configs: $OK succeeded, $FAIL failed"
+        "Crawled ${#TOMLS[@]} configs"
 fi
